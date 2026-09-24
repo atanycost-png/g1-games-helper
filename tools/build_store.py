@@ -58,8 +58,8 @@ ICONS = ["icons/icon16.png", "icons/icon48.png", "icons/icon128.png"]
 
 STORE_NAME = "Logic Games Helper"
 STORE_DESCRIPTION = (
-    "Mostra ou resolve jogos de lógica do G1: Sudoku, Dito, Soletra, "
-    "Combinado, Labirinto, Caça-Palavras e Cruzadas."
+    "Mostra ou resolve jogos de lógica: Sudoku, Dito, Soletra, Combinado, "
+    "Labirinto, Caça-Palavras e Cruzadas."
 )
 
 
