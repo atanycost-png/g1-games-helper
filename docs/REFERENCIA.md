@@ -315,6 +315,17 @@ célula que estava selecionada** → erro.
    o "esconder" (caro, roda 1× + quando bloqueia) do "despausar" (barato, roda
    sempre) levou a **1,3 s/célula** — 7× mais rápido, com 0 erros.
 
+### Cruzadão: o relatório mentia sobre o preenchimento
+
+O quadro é SVG e o framework atualiza `text.value` de forma **assíncrona**. Ler a
+letra imediatamente após o `keydown` devolvia vazio → o `cwFill` reportava
+`preenchidas: 0` com 74 "erros" **mesmo tendo preenchido o tabuleiro inteiro**
+(confirmado depois: 74 `g.cell`, 0 vazias). Correção: `cwTypeInto` virou `async` e
+espera a letra aparecer (até ~350 ms, checando a cada 70 ms) antes de julgar.
+
+> Lição geral: **nunca julgar o resultado de um input sintético na mesma tick** —
+> em app com framework o DOM só reflete o estado depois do próximo flush.
+
 ### Modo humanizado (todos os jogos)
 
 `background.js` (canvas) e `fillCells` (DOM) respeitam 3 modos escolhidos no
@@ -525,10 +536,23 @@ perfil de teste não consome a partida do perfil logado.
 Gabarito: `https://g1.globo.com/jogos/static/soletra.json`
 → `{ letters:"zaimort", word_list:[{word,score,pangram,label}], pangram_list, total_score }`.
 
-**⚠️ Preencher não é `input.value`.** Setar o valor + disparar `input` + ENTER mostra
-as letras na telinha mas **não valida** — o jogo mantém o estado pelas TECLAS. O que
-funciona é focar o `#input` e disparar `keydown`/`keyup` por letra (com `keyCode`,
-que o componente lê), depois ENTER (ou o botão "Confirmar").
+**⚠️ Preencher exige DOIS detalhes (custou 29 palavras rejeitadas):**
+
+1. `keydown` sintético **não escreve em `<input>`** — quem alimenta o jogo é o
+   `value` do input, porque o componente usa `bind:value`. Precisamos escrever o
+   valor acumulado com o **setter nativo** + evento `input` (`gcSetValor`), e mandar
+   o `keydown` da letra só para o jogo "sentir" a digitação.
+2. Enquanto o estado `firstLoad` for true, o **ENTER é ignorado**:
+   `function ee(o){ if(o.key==="Enter"){ if(e(P)) return; … Me() } }`.
+   Quem desliga o `firstLoad` é `B()`, chamada no keydown de uma letra qualquer
+   (`function B(){ e(P)&&(G(l, e(l).replace(e(_),"")), ze(m, e(m).value=e(l))); G(P,!1) }`).
+
+Ordem que funciona (validada — 12 palavras de uma vez, "Palavra já encontrada!"
+nas repetições): **keydown da 1ª letra → escreve o valor acumulado → ENTER**.
+
+⚠️ Efeito colateral a evitar: se o `#input` não estiver focado, o ENTER pode acionar
+o botão focado da página ("Encerrar partida" encerra a partida!) — sempre foque o
+input antes de digitar e confirme o `document.activeElement`.
 
 **Validação:** digitando `amortizar` letra a letra → toast *"Encontrou uma palavra
 'pangrama'! +16 pontos"* e o contador **1/29**. O placar é lido da própria página
@@ -643,6 +667,13 @@ também o remove.
 | 2026-09-23 | **Caça-Palavras**: gabarito no JSON estático `c_palavras.json`; o jogo é Svelte com event delegation e lê `offsetX` → automação da marcação inviável (6 abordagens testadas); adotado **destaque das respostas** (`wordsearch.js`) |
 | 2026-09-23 | `wsEnsureGame` corrigido: só clica em `<button>` — links "Jogar" de outros jogos navegavam para fora (parou em `/jogos/soletra/`) |
 | 2026-09-23 | Extensão **v3.4.0**: `wordsearch.js` no manifest + fluxo próprio no popup ("Destacar palavras") |
+| 2026-09-23 | **Dito**: a base diária (1236 palavras) está embutida no chunk `_astro/index.<hash>.js`; resposta do dia (2026-09-23) = `moeda`; validado digitando → "Acertou!" |
+| 2026-09-23 | **Soletra**: `soletra.json` com `word_list`; descoberto que keydown sintético não escreve no input e que `firstLoad` bloqueia o ENTER → sequência keydown + `value` + ENTER; 12 palavras aceitas numa rodada |
+| 2026-09-23 | **Combinado**: `words` em blocos de 4 + `order` = posição na tela; armadilha do filtro `/active/` (a classe é `cell--interactive`); **4/4 grupos** resolvidos |
+| 2026-09-23 | **Labirinto**: coordenadas são **[col,row]** (transpor dava "ERIA"); tour + drawer cobrem o canvas; arrasto real → "Parabéns! Mestre do labirinto!" (02:12) |
+| 2026-09-23 | **Cruzadão** (não só o mini): `cruzada.json` tem a mesma estrutura; corrigida a URL por página (a regex antiga fazia o cruzadão baixar o JSON do mini) e a leitura assíncrona do SVG (74/74 preenchido) |
+| 2026-09-23 | Extensão **v4.0.0**: `g1common.js` (base + painel + ritmo) e um módulo por jogo; popup virou menu (card do jogo, ritmo persistido, chips); `cdpDrag` no background para o labirinto |
+| 2026-09-23 | Projeto publicado em **https://github.com/atanycost-png/g1-games-helper** (MIT, autoria só pelo usuário do GitHub) |
 
 > Nota de nomenclatura: neste projeto **"Bend 2" é a linguagem de programação**
 > (bendlang/bend, doc em `D:\Dev\Projetos\bend-docs`) — **não** o Cheat Engine

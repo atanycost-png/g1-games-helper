@@ -14,11 +14,11 @@ da base de palavras embutida no bundle do jogo. Tudo roda no cliente.
 |---|---|---|
 | 🔢 **Sudoku (G1)** | lê a grade `DIV.cell` e resolve por backtracking | ✅ validado |
 | 🐴 **Dito** (Wordle) | palavra do dia lida da base embutida no bundle do site | ✅ validado |
-| 🔤 **Soletra** (Spelling Bee) | digita todas as palavras do `soletra.json` | ✅ validado |
+| 🔤 **Soletra** (Spelling Bee) | digita as palavras do `soletra.json` | ✅ validado (12 palavras/rodada) |
 | 🧩 **Combinado** (Connections) | agrupa pelas `groups` + `words` do `combinado.json` | ✅ validado |
 | 🌀 **Labirinto** | traça o `solution_path` do `labirinto.json` com arrasto real | ✅ validado |
 | 🔎 **Caça-Palavras** | **destaca** as respostas na grade (`answer` + `suggestions`) | ✅ validado |
-| ⬜ **Palavras Cruzadas** (mini e grande) | preenche pelo `cruzada_mini.json` / `cruzada.json` | ✅ validado |
+| ⬜ **Palavras Cruzadas** (mini e grande) | preenche pelo `cruzada_mini.json` / `cruzada.json` | ✅ validado (74/74 células) |
 | 🌐 **Sudoku.com** | lê `localStorage['main_game']` e preenche o canvas | ✅ validado (43 células, 0 erros) |
 | 📋 **Grade HTML 9×9** / **Formulário 9×9** | fallbacks genéricos | nunca exercitados em site real |
 

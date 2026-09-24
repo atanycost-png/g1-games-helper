@@ -76,7 +76,12 @@
   S.digitarPalavra = async function (palavra, opts) {
     const inp = document.querySelector('#input');
     if (!inp) return false;
-    inp.focus();
+    // ⚠️ Se o input não estiver focado, o ENTER pode acionar o botão focado da
+    // página — e "Encerrar partida" ENCERRA a partida. Garante o foco.
+    for (let i = 0; i < 3 && document.activeElement !== inp; i++) {
+      inp.focus();
+      await window.gcSleep(80);
+    }
     const human = !opts || opts.human !== false;
 
     if (human) {
