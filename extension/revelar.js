@@ -41,8 +41,12 @@
     (raiz || document).querySelectorAll('.' + CLASSE).forEach(e => e.remove());
   }
 
-  /** Insere um fantasma dentro de `pai`, posicionado de forma absoluta. */
-  function fantasmaDiv(pai, texto, escala) {
+  /**
+   * Insere um fantasma dentro de `pai`, posicionado de forma absoluta.
+   * `fonteCss` deve ser o font-size REAL do dígito do jogo — usar % da célula
+   * deixa o fantasma ilegível quando o texto do número é maior que a célula.
+   */
+  function fantasmaDiv(pai, texto, fonteCss) {
     if (!pai) return null;
     if (getComputedStyle(pai).position === 'static') pai.style.position = 'relative';
     const s = document.createElement('span');
@@ -52,11 +56,19 @@
       'position:absolute', 'inset:0', 'display:flex', 'align-items:center',
       'justify-content:center', 'pointer-events:none', 'z-index:5',
       'color:' + COR, 'font-weight:700',
-      'font-size:' + (escala || '62%'), 'opacity:.72',
+      'font-size:' + (fonteCss || '1.1em'), 'opacity:.78',
       'line-height:1', 'font-family:inherit'
     ].join(';');
     pai.appendChild(s);
     return s;
+  }
+
+  /** font-size computado do dígito do jogo (para o fantasma ter o mesmo porte). */
+  function fonteDoDigito(cel) {
+    const base = cel && (cel.querySelector('.cell-text') || cel.querySelector('SPAN'));
+    if (!base) return null;
+    const fs = getComputedStyle(base).fontSize;
+    return (fs && fs !== '0px') ? fs : null;
   }
 
   /** Clona um <text> SVG do site (geometria pronta) e troca o conteúdo. */
@@ -100,12 +112,9 @@
       if (!(quer >= 1 && quer <= 9)) continue;
       if (cell.value === quer) continue;              // já está certo
       if (cell.value !== 0) continue;                 // respeita valor do usuário
-      // clona o .cell-text do site: a geometria e o alinhamento vêm prontos
       const alvo = (cell.click.closest ? cell.click.closest('.cell') : null) || cell.click.parentElement;
-      const base = (alvo && alvo.querySelector('.cell-text')) || (alvo && alvo.querySelector('SPAN'));
-      const el = fantasmaDiv(alvo, String(quer), '58%');
+      const el = fantasmaDiv(alvo, String(quer), fonteDoDigito(alvo));
       if (el) pintadas++;
-      void base;
     }
     return { ok: true, tipo: 'sudoku', pintadas: pintadas, autoRefresh: true };
   };
@@ -123,7 +132,10 @@
     let pintadas = 0;
     if (vazia) {
       [...vazia.children].forEach((casa, i) => {
-        if (r.palavra[i] && fantasmaDiv(casa, r.palavra[i], '64%')) pintadas++;
+        if (!r.palavra[i]) return;
+        const base = casa.querySelector('SPAN') || casa.firstElementChild;
+        const fs = base ? getComputedStyle(base).fontSize : null;
+        if (fantasmaDiv(casa, r.palavra[i], fs && fs !== '0px' ? fs : '1.1em')) pintadas++;
       });
     }
 
