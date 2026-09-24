@@ -166,6 +166,32 @@ publicar.
 - [ ] submissão/revisão no Edge Add-ons
 - [ ] eventual submissão/revisão na Chrome Web Store
 
+## Mozilla Add-ons (AMO): custo e situação
+
+Verificado em 2026-09-24 na documentação oficial da Mozilla: **não há taxa de
+publicação nem cobrança de cadastro indicada para o AMO**. A conta de
+ desenvolvedor é integrada a uma conta Mozilla; a documentação oficial descreve
+login, nome público, submissão e revisão, sem etapa de pagamento.
+
+Fontes oficiais:
+
+- [Developer accounts](https://extensionworkshop.com/documentation/publish/developer-accounts/)
+- [Submitting an add-on](https://extensionworkshop.com/documentation/publish/submitting-an-add-on/)
+- [Add-on Policies](https://extensionworkshop.com/documentation/publish/add-on-policies/)
+
+Isso não significa publicação automática: ainda existe revisão, assinatura da
+extensão e exigência de cumprir as políticas. A conta não deve usar e-mail
+descartável, e a Mozilla pode bloquear contas que enviem repetidamente add-ons
+em violação das políticas.
+
+Para o nosso projeto, o pacote de loja sem `debugger` é um bom ponto de partida,
+mas ainda precisa de uma variante Firefox testada. O Manifest V3 e a API
+`chrome.*` podem exigir compatibilidade/ajuste para `browser.*`; principalmente,
+o `chrome.debugger` fica fora da variante sem privilégios, então o Sudoku.com e
+o arrasto automático do Labirinto continuam excluídos. A rota de menor risco é
+publicar primeiro o **userscript no Greasy Fork**; AMO é uma alternativa sem taxa,
+mas continua exigindo revisão e não elimina o risco de política sobre automação.
+
 ## Recomendação
 
 | Objetivo | Caminho |
