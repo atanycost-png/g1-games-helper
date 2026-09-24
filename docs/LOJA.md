@@ -66,6 +66,27 @@ Zero risco de loja, instalação por *Load unpacked*.
 
 ### B) Build de loja (perde 1 jogo e 1 gesto, ganha submetibilidade)
 
+#### Manutenção sem duplicar código
+
+Não existe uma segunda cópia editável. `extension/` é a **fonte única**; o
+script `tools/build_store.py` gera o pacote de loja em `dist/store/` e o ZIP
+`dist/g1-games-helper-store.zip`.
+
+```bash
+python tools/build_store.py --check  # falha se entrar debugger, <all_urls>, etc.
+python tools/build_store.py           # gera diretório + ZIP
+# ou:
+# npm run check:store && npm run build:store
+```
+
+Os trechos exclusivos da variante completa são marcados na fonte com
+`/* @loja:remove:start */` e `/* @loja:remove:end */`. O gerador remove esses
+blocos, reconstrói o `manifest.json` sem `debugger`/background e restringe o host
+a `https://g1.globo.com/*`. Se uma futura alteração reintroduzir um caminho
+privilegiado sem estar contemplada no gerador, o build **falha** em vez de
+produzir silenciosamente um pacote incoerente. `dist/` é descartado pelo Git;
+o ZIP é o artefato para upload.
+
 1. **Tirar `debugger`** do manifest → sai o Sudoku.com; o Labirinto fica no modo
    assistido (o trajeto continua sendo calculado e desenhado no canvas).
 2. **Restringir hosts** para `https://g1.globo.com/*` (sem `<all_urls>`).

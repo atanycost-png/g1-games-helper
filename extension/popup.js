@@ -30,7 +30,9 @@ const JOGOS = [
   { id: 'wordsearch',   nome: 'Caça-Palavras',   emoji: '🔎', url: 'https://g1.globo.com/jogos/caca-palavras/',     acao: 'Destacar as palavras',       ver: 'Destacar as palavras' },
   { id: 'crossword',    nome: 'Cruzadas',        emoji: '⬜', url: 'https://g1.globo.com/jogos/palavras-cruzadas/', acao: 'Preencher o tabuleiro',      ver: 'Mostrar as letras' },
   { id: 'g1',           nome: 'Sudoku (G1)',     emoji: '🔢', url: 'https://g1.globo.com/jogos/sudoku/',            acao: 'Resolver e preencher',       ver: 'Mostrar os números' },
+/* @loja:remove:start — sudoku.com fica fora do pacote de loja (host restrito a g1.globo.com) */
   { id: 'sudoku.com',   nome: 'Sudoku.com',      emoji: '🌐', url: 'https://sudoku.com/br/facil/',                  acao: 'Preencher o tabuleiro',      ver: null },
+/* @loja:remove:end */
   { id: 'table',        nome: 'Grade HTML',      emoji: '📋', url: 'https://g1.globo.com/jogos/soletra/',           acao: 'Resolver e preencher',       ver: 'Mostrar os números' },
   { id: 'inputs',       nome: 'Formulário 9×9',  emoji: '⌨️', url: 'https://g1.globo.com/jogos/sudoku/',            acao: 'Resolver e preencher',       ver: 'Mostrar os números' }
 ];
@@ -229,6 +231,8 @@ document.addEventListener('DOMContentLoaded', () => {
     if (fecharEl && fecharEl.checked) setTimeout(() => window.close(), ms || 400);
   }
 
+/* @loja:remove:start — sem a permissão `debugger` não existe input real:
+   o Sudoku.com (canvas, sem DOM de casas) sai do pacote de loja inteiro. */
   /** sudoku.com: plano de cliques + chrome.debugger (input real). */
   async function cdpSudoku(optsMenu) {
     const sol = await send({ action: 'solve' });
@@ -250,6 +254,8 @@ document.addEventListener('DOMContentLoaded', () => {
     sub.textContent = r && r.success ? `${r.done}/${r.total} células` : 'falhou: ' + ((r && r.error) || '?');
   }
 
+/* @loja:remove:end */
+
   /** labirinto: tenta sintético; se o jogo não aceitar, arrasto real por CDP. */
   async function labirinto(optsMenu) {
     log('montando o trajeto…');
@@ -257,6 +263,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (!r) return;
     if (r.success && r.palavra) { sub.textContent = 'trajeto aplicado'; log('palavra: ' + r.palavra); return; }
     if (r.precisaCdp && r.plano) {
+/* @loja:remove:start — o arrasto real (CDP) só existe no build completo */
       const tab = await activeTab();
       const payload = { type: 'cdpDrag', tabId: tab.id, plan: r.plano, opts: optsMenu };
       if (fecharEl.checked) {
@@ -267,6 +274,12 @@ document.addEventListener('DOMContentLoaded', () => {
       }
       const res = await chrome.runtime.sendMessage(payload);
       sub.textContent = res && res.success ? 'trajeto traçado' : 'falhou: ' + ((res && res.error) || '?');
+      return;
+/* @loja:remove:end */
+      /* build de loja: sem input real, mostra o trajeto e deixa o jogador traçar */
+      const rv = await send({ action: 'revelar', opts: optsMenu });
+      sub.textContent = rv && rv.ok ? 'trajeto mostrado — trace com o mouse' : 'não consegui mostrar';
+      log(rv && rv.ok ? ('palavra: ' + (rv.word || '?') + ' · ' + (rv.casas || 0) + ' casas no trajeto') : 'sem detalhes');
       return;
     }
     sub.textContent = 'não consegui traçar';
@@ -304,7 +317,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
     log('trabalhando… (modo ' + modo + ')');
     try {
+/* @loja:remove:start */
       if (jogo.id === 'sudoku.com') { await cdpSudoku(opts()); return; }
+/* @loja:remove:end */
       if (jogo.id === 'labirinto') { await labirinto(opts()); return; }
 
       const r = await send({ action: 'auto', opts: opts() });

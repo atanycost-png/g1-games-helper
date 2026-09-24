@@ -14,6 +14,7 @@ Uso:
 
 import argparse
 import json
+import os
 import sys
 import time
 import urllib.request
@@ -25,7 +26,7 @@ except ImportError:
     sys.exit("falta websocket-client:  pip install websocket-client")
 
 CDP_HTTP = "http://127.0.0.1:9222"
-EXT = Path(__file__).resolve().parent.parent / "extension"
+EXT = Path(os.environ.get("G1_EXT_DIR", str(Path(__file__).resolve().parent.parent / "extension")))
 
 
 class Page:
@@ -149,7 +150,8 @@ def main():
     print(json.dumps(r, ensure_ascii=False, indent=1))
     p.ws.close()
 
-    ok = (isinstance(r, dict) and not r.get("__erro") and r.get("chips") == 10
+    esperado_chips = 9 if EXT.name == "store" else 10
+    ok = (isinstance(r, dict) and not r.get("__erro") and r.get("chips") == esperado_chips
           and r.get("botaoHabilitado") and not r.get("erros"))
     print("\n" + ("✔ POPUP OK" if ok else "✗ POPUP COM PROBLEMA"))
 
