@@ -1040,18 +1040,30 @@ if (typeof window !== 'undefined') {
 
   // ── leitura do estado na tela ──────────────────────────────────────────────
 
-  D.estado = function () {
+  /**
+   * Leitura do tabuleiro.
+   *
+   * ⚠️ `palavraDoDia` NÃO é opcional na prática: o jogo guarda a sessão em
+   * localStorage e, no dia seguinte, pode restaurar no DOM o tabuleiro vencedor
+   * de ONTEM. Sem comparar com a palavra de hoje o robô responde "já estava
+   * resolvido hoje" e PULA o desafio novo — aconteceu na virada do dia 23→24.
+   */
+  D.estado = function (palavraDoDia) {
     const linhas = [...document.querySelectorAll('.board .row')].map(r => ({
       texto: (r.textContent || '').trim(),
       cls: [...r.children].map(c => String(c.className).replace(/svelte-\S+/g, '').trim())
     }));
     const usadas = linhas.filter(l => l.texto).length;
-    const acertou = linhas.some(l => l.cls.length && l.cls.every(c => /correct/.test(c)));
+    const vencedora = linhas.find(l => l.cls.length && l.cls.every(c => /correct/.test(c)));
+    const mesmaPalavra = !palavraDoDia || !vencedora ||
+      window.gcNorm(vencedora.texto) === window.gcNorm(palavraDoDia);
     const tela = document.body.innerText.replace(/\s+/g, ' ');
     return {
       linhas: linhas.slice(0, usadas),
       tentativasUsadas: usadas,
-      acertou: acertou || /Acertou|Parabéns/i.test(tela),
+      linhaVencedora: vencedora ? vencedora.texto : null,
+      acertou: !!vencedora && mesmaPalavra,
+      acertouOntem: !!vencedora && !mesmaPalavra,
       tela: tela.slice(0, 200)
     };
   };
@@ -1081,20 +1093,28 @@ if (typeof window !== 'undefined') {
     }
     if (!D.pronto()) return { ok: false, erro: 'tabuleiro do Dito não apareceu' };
 
-    const st = D.estado();
-    if (st.acertou) {
-      window.gcPainel('Dito', 'Partida de hoje já resolvida', [
-        { titulo: 'Situação', itens: [{ txt: 'Você já acertou a palavra de hoje', nota: st.tentativasUsadas + '/6' }] }
-      ], 'Aguarde o próximo desafio (à meia-noite).');
-      return { ok: true, jaResolvido: true };
-    }
-
+    // a resposta do dia vem primeiro: é ela que decide se o tabuleiro na tela é
+    // de hoje ou o resto da partida de ontem
     const r = await D.palavraDeHoje();
     if (r.erro) {
       window.gcPainel('Dito', 'Não consegui ler o gabarito', [
         { titulo: 'Motivo', itens: [{ txt: r.erro }] }
       ], 'Recarregue a página (F5) e tente de novo.');
       return { ok: false, erro: r.erro };
+    }
+
+    const st = D.estado(r.palavra);
+    if (st.acertou) {
+      window.gcPainel('Dito', 'Partida de hoje já resolvida', [
+        { titulo: 'Situação', itens: [
+          { txt: 'A palavra de hoje (' + r.palavra + ') já está na tela', nota: st.tentativasUsadas + '/6' }
+        ] }
+      ], 'Aguarde o próximo desafio (à meia-noite).');
+      return { ok: true, jaResolvido: true, palavra: r.palavra };
+    }
+    if (st.acertouOntem) {
+      // o DOM ainda mostra a vitória do dia anterior — não é "já resolvido hoje"
+      window.gcPainelStatus('tabuleiro de ontem na tela (' + st.linhaVencedora + ') — jogando o de hoje');
     }
 
     window.gcPainel('Dito', 'Palavra do dia: ' + r.palavra, [
@@ -1116,8 +1136,15 @@ if (typeof window !== 'undefined') {
     if (ent) window.gcCliqueReal(ent);
     else window.gcTecla(document, 'Enter');
 
-    await window.gcSleep(1400);
-    const fim = D.estado();
+    // a animação de "flip" das letras leva ~1s: ler uma vez só às vezes pega o
+    // tabuleiro ainda virando e o painel anuncia "tentativa enviada" no lugar de
+    // "acertou". Aqui espera a confirmação aparecer (até ~4s).
+    let fim = D.estado(r.palavra);
+    for (let i = 0; i < 6 && !fim.acertou; i++) {
+      await window.gcSleep(650);
+      fim = D.estado(r.palavra);
+      if (fim.acertou) break;
+    }
 
     window.gcPainel('Dito', fim.acertou ? 'Acertou: ' + r.palavra : 'Tentativa enviada: ' + r.palavra, [
       { titulo: 'Situação', itens: [
