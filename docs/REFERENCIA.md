@@ -676,7 +676,49 @@ também o remove.
 
 ---
 
-## 14. Histórico
+## 14. Modo assistido (`revelar.js`) — mostrar a solução sem jogar
+
+Pedido: *"um modo que só mostre a solução na página e o usuário conclua por conta
+própria"*. Em vez de preencher, o helper PINTA a resposta e para.
+
+**Regra de ouro**: nunca tocar no estado do jogo. Toda marca é um elemento novo
+(`.__g1g_ghost`), com `pointer-events: none`, criado a partir da geometria do
+próprio site; nada é digitado nem submetido. Se o usuário não jogar, o jogo fica
+idêntico.
+
+**A armadilha que isso cria**: os leitores do próprio projeto passam a poder ler a
+solução como se fosse jogada. O `detectG1` varre `SPAN` com dígito dentro da célula
+— e o fantasma é exatamente isso. Sem o filtro, a segunda detecção diria que o
+tabuleiro está resolvido (e `extractGrid` alimentaria o solver com valores que o
+jogo não tem). Por isso `content.js` filtra `.__g1g_ghost` nas duas passagens
+(leitura do valor e detecção de "só anotação"), e o fantasma do cruzadão usa classe
+própria em vez de `text.value`.
+
+**Por jogo:**
+
+| Estratégia | Como fica visível | Nota de implementação |
+|---|---|---|
+| `g1` / `table` / `inputs` | dígito rosa em cada casa vazia | `solutionFor` vive no IIFE do `content.js` — usar `window.__g1Helper.solutionFor`, não a global |
+| `dito` | palavra do dia em letras rosa na 1ª linha vazia | + painel; nada é submetido |
+| `soletra` | painel com a lista (★ pangrama) | contador do jogo é relido a cada 1,5 s e o painel se atualiza sozinho |
+| `combinado` | painel com os 4 grupos + selo colorido nas células | o selo casa painel × tabuleiro |
+| `labirinto` | `<svg>` sobreposto ao canvas com o trajeto tracejado e ▶ no início | coordenadas do plano (viewport) convertidas para o espaço do canvas |
+| `wordsearch` | reusa o destaque que já existia | |
+| `crossword` | letra rosa em cada casa vazia | ⚠️ casa VAZIA não tem `text.value` para clonar — o fantasma é construído da geometria do `<rect>` da célula |
+
+**Verificação** (`tools/test_assistido_cdp.py`), medindo o estado antes e depois:
+
+| Jogo | Marcas | Preencheu algo? |
+|---|---|---|
+| Sudoku (fixture) | 43 fantasmas | **não** — a detecção continua lendo as mesmas 38 fixas (filtro funcionando) |
+| Dito | 5 letras (palavra `LAZER`) | não |
+| Combinado | 16 selos | não |
+| Labirinto | trajeto no canvas | não |
+| Caça-Palavras | 39 células | não |
+| Cruzadas | 76 fantasmas | não — segue com 0 casas preenchidas |
+| Soletra | painel com 23 palavras | não |
+
+## 15. Histórico
 
 | Data | Mudança |
 |---|---|
@@ -711,7 +753,7 @@ também o remove.
 
 ---
 
-## 15. Comandos úteis
+## 16. Comandos úteis
 
 ```bash
 # Edge com CDP (para inspecionar/testar; a extensão carrega manualmente)

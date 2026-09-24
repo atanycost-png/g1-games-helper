@@ -91,7 +91,7 @@ def injetar(p, b64):
     }})()""")
 
 
-def testar(nome, url, p, b64):
+def testar(nome, url, p, b64, assistido=False):
     print(f"\n{'='*72}\n▶ {nome}  (userscript)\n{'='*72}")
     p.goto(url)
     time.sleep(3)
@@ -131,6 +131,12 @@ def testar(nome, url, p, b64):
     if estado.get("chips") != 7:
         print(f"⚠️  esperava 7 chips, achei {estado.get('chips')}")
 
+    # modo assistido: força "só mostrar" antes de rodar (o menu do userscript
+    # também persiste essa escolha, aqui forçamos para o teste ser determinístico)
+    if assistido:
+        p.js("window.__g1UI.modoAcao='assistido'; window.__g1UI.pintarAcao(); 'ok'")
+        print("modo de ação: assistido (só mostrar)")
+
     # abre o cartão pelo botão e roda a ação
     aberto = p.js("""(() => { document.getElementById('__g1u_btn').click();
       return JSON.stringify({ visivel: !document.getElementById('__g1u_card').hidden }); })()""")
@@ -141,6 +147,8 @@ def testar(nome, url, p, b64):
       aviso: (document.getElementById('__g1u_aviso') || {}).textContent,
       // evidência no DOM (não confiar só no texto que o próprio script escreveu)
       destaques: document.querySelectorAll('rect.__g1ws_hl').length,
+      ghosts: document.querySelectorAll('.__g1g_ghost').length,
+      preenchidasDepois: [...document.querySelectorAll('g.cell')].filter(g => ((g.querySelector('text.value')||{}).textContent||'').trim()).length,
       painel: !!document.getElementById('__g1g_panel'),
       linhasComLetra: [...document.querySelectorAll('.board .row')].filter(r => (r.textContent||'').trim()).length
     }))""", await_promise=True)
@@ -162,11 +170,16 @@ def testar(nome, url, p, b64):
         d = {}
 
     ev = res if isinstance(res, dict) else {}
-    prova = {
-        "caca-palavras": ev.get("destaques", 0) > 0,
-        "dito": ev.get("linhasComLetra", 0) > 0,
-        "sudoku": ev.get("painel", False),
-    }.get(nome, ev.get("painel", False) or bool(ev.get("log")))
+    if assistido:
+        # no modo assistido a prova é a MARCA na página, e nada pode ter sido jogado
+        prova = (ev.get("ghosts", 0) > 0 or ev.get("destaques", 0) > 0
+                 or ev.get("painel", False))
+    else:
+        prova = {
+            "caca-palavras": ev.get("destaques", 0) > 0,
+            "dito": ev.get("linhasComLetra", 0) > 0,
+            "sudoku": ev.get("painel", False),
+        }.get(nome, ev.get("painel", False) or bool(ev.get("log")))
     ok = (bool(res) and isinstance(res, dict) and bool(ev.get("log"))
           and not str(ev.get("log")).startswith("erro") and prova)
     if d.get("s") and d["s"] != ESPERADO.get(nome):
@@ -177,6 +190,7 @@ def testar(nome, url, p, b64):
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("jogos", nargs="*", default=None)
+    ap.add_argument("--assistido", action="store_true", help="testa o modo 'só mostrar'")
     args = ap.parse_args()
 
     if not ARQUIVO.exists():
@@ -194,7 +208,7 @@ def main():
             print("desconhecido:", nome)
             continue
         try:
-            res.append(testar(nome, url, p, b64))
+            res.append(testar(nome, url, p, b64, assistido=args.assistido))
         except Exception as e:
             print(f"✗ {nome}: {e}")
             res.append({"nome": nome, "ok": False, "erro": str(e)[:200]})

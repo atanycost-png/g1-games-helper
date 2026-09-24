@@ -23,17 +23,22 @@ const MODOS = {
 
 /** Menu de jogos: id = estratégia devolvida pelo content script. */
 const JOGOS = [
-  { id: 'dito',         nome: 'Dito',            emoji: '🐴', url: 'https://g1.globo.com/jogos/dito/',                    acao: 'Resolver a palavra do dia' },
-  { id: 'soletra',      nome: 'Soletra',         emoji: '🔤', url: 'https://g1.globo.com/jogos/soletra/',                 acao: 'Digitar as palavras' },
-  { id: 'combinado',    nome: 'Combinado',       emoji: '🧩', url: 'https://g1.globo.com/jogos/combinado/',               acao: 'Resolver os 4 grupos' },
-  { id: 'labirinto',    nome: 'Labirinto',       emoji: '🌀', url: 'https://g1.globo.com/jogos/labirinto/',               acao: 'Traçar o caminho' },
-  { id: 'wordsearch',   nome: 'Caça-Palavras',   emoji: '🔎', url: 'https://g1.globo.com/jogos/caca-palavras/',           acao: 'Destacar as palavras' },
-  { id: 'crossword',    nome: 'Cruzadas',        emoji: '⬜', url: 'https://g1.globo.com/jogos/palavras-cruzadas/',       acao: 'Preencher o tabuleiro' },
-  { id: 'g1',           nome: 'Sudoku (G1)',     emoji: '🔢', url: 'https://g1.globo.com/jogos/sudoku/',                  acao: 'Resolver e preencher' },
-  { id: 'sudoku.com',   nome: 'Sudoku.com',      emoji: '🌐', url: 'https://sudoku.com/br/facil/',                        acao: 'Preencher o tabuleiro' },
-  { id: 'table',        nome: 'Grade HTML',      emoji: '📋', url: 'https://g1.globo.com/jogos/soletra/',                 acao: 'Resolver e preencher' },
-  { id: 'inputs',       nome: 'Formulário 9×9',  emoji: '⌨️', url: 'https://g1.globo.com/jogos/sudoku/',                  acao: 'Resolver e preencher' }
+  { id: 'dito',         nome: 'Dito',            emoji: '🐴', url: 'https://g1.globo.com/jogos/dito/',              acao: 'Resolver a palavra do dia',  ver: 'Mostrar a palavra do dia' },
+  { id: 'soletra',      nome: 'Soletra',         emoji: '🔤', url: 'https://g1.globo.com/jogos/soletra/',           acao: 'Digitar as palavras',        ver: 'Mostrar as palavras' },
+  { id: 'combinado',    nome: 'Combinado',       emoji: '🧩', url: 'https://g1.globo.com/jogos/combinado/',         acao: 'Resolver os 4 grupos',       ver: 'Mostrar os grupos' },
+  { id: 'labirinto',    nome: 'Labirinto',       emoji: '🌀', url: 'https://g1.globo.com/jogos/labirinto/',         acao: 'Traçar o caminho',           ver: 'Mostrar o caminho' },
+  { id: 'wordsearch',   nome: 'Caça-Palavras',   emoji: '🔎', url: 'https://g1.globo.com/jogos/caca-palavras/',     acao: 'Destacar as palavras',       ver: 'Destacar as palavras' },
+  { id: 'crossword',    nome: 'Cruzadas',        emoji: '⬜', url: 'https://g1.globo.com/jogos/palavras-cruzadas/', acao: 'Preencher o tabuleiro',      ver: 'Mostrar as letras' },
+  { id: 'g1',           nome: 'Sudoku (G1)',     emoji: '🔢', url: 'https://g1.globo.com/jogos/sudoku/',            acao: 'Resolver e preencher',       ver: 'Mostrar os números' },
+  { id: 'sudoku.com',   nome: 'Sudoku.com',      emoji: '🌐', url: 'https://sudoku.com/br/facil/',                  acao: 'Preencher o tabuleiro',      ver: null },
+  { id: 'table',        nome: 'Grade HTML',      emoji: '📋', url: 'https://g1.globo.com/jogos/soletra/',           acao: 'Resolver e preencher',       ver: 'Mostrar os números' },
+  { id: 'inputs',       nome: 'Formulário 9×9',  emoji: '⌨️', url: 'https://g1.globo.com/jogos/sudoku/',            acao: 'Resolver e preencher',       ver: 'Mostrar os números' }
 ];
+
+const MODOS_ACAO = {
+  assistido: { nota: 'a solução aparece, quem joga é você' },
+  automatico: { nota: 'o helper joga por você' }
+};
 
 const MSG = {
   G1_LOGIN_REQUIRED: 'O G1 exige LOGIN para liberar o jogo. Faça login em g1.globo.com e recarregue a página.',
@@ -46,11 +51,13 @@ document.addEventListener('DOMContentLoaded', () => {
   const $ = id => document.getElementById(id);
   const sub = $('sub'), ponto = $('ponto'), jogoEl = $('jogo'), badge = $('badge'),
         infoEl = $('info'), acaoEl = $('acao'), chipsEl = $('chips'), logEl = $('log'),
-        ritmoNota = $('ritmo-nota'), fecharEl = $('fechar-popup');
+        ritmoNota = $('ritmo-nota'), fecharEl = $('fechar-popup'),
+        acoesEl = $('acoes'), acaoNota = $('acao-nota');
 
-  let jogo = null;        // { id, nome, emoji, acao, ... } do jogo detectado
+  let jogo = null;        // { id, nome, emoji, acao, ver, ... } do jogo detectado
   let detectado = null;   // resposta crua do content script
-  let modo = 'humano';
+  let modo = 'humano';    // ritmo (só faz diferença no modo automático)
+  let modoAcao = 'assistido';   // assistido = só mostra | automatico = joga
 
   const log = (t) => { logEl.textContent = t || ''; };
 
@@ -60,14 +67,40 @@ document.addEventListener('DOMContentLoaded', () => {
   // (o popup abria sem botões). Aqui a falha é tolerada.
   const store = (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local) || null;
   if (store) {
-    store.get(['modo', 'fechar'], (r) => {
+    store.get(['modo', 'fechar', 'modoAcao'], (r) => {
       if (r && r.modo && MODOS[r.modo]) modo = r.modo;
       if (r && typeof r.fechar === 'boolean') fecharEl.checked = r.fechar;
-      pintarRitmo();
+      if (r && r.modoAcao && MODOS_ACAO[r.modoAcao]) modoAcao = r.modoAcao;
+      pintarRitmo(); pintarAcao();
     });
   } else {
-    pintarRitmo();
+    pintarRitmo(); pintarAcao();
   }
+
+  /** Mostra quem escolheu: "só mostrar" (assistido) ou "resolver" (automático). */
+  function pintarAcao() {
+    [...acoesEl.children].forEach(b => b.classList.toggle('on', b.dataset.acao === modoAcao));
+    acaoNota.textContent = (MODOS_ACAO[modoAcao] || {}).nota || '';
+    // o ritmo só existe no modo automático — no assistido nada é digitado
+    ritmoNota.parentElement.style.opacity = modoAcao === 'assistido' ? '.45' : '1';
+    pintarBotao();
+  }
+
+  /** Rótulo do botão principal muda conforme o jogo e o modo de ação. */
+  function pintarBotao() {
+    if (!jogo) { acaoEl.textContent = 'Abra um jogo do G1'; return; }
+    const assistido = modoAcao === 'assistido' && jogo.ver;
+    acaoEl.textContent = assistido ? jogo.ver : jogo.acao;
+    acaoEl.disabled = !(assistido || modoAcao === 'automatico');
+  }
+
+  acoesEl.addEventListener('click', (e) => {
+    const b = e.target.closest('button[data-acao]');
+    if (!b) return;
+    modoAcao = b.dataset.acao;
+    pintarAcao();
+    if (store) store.set({ modoAcao });
+  });
 
   function pintarRitmo() {
     [...$('ritmos').children].forEach(b => b.classList.toggle('on', b.dataset.modo === modo));
@@ -115,7 +148,7 @@ document.addEventListener('DOMContentLoaded', () => {
       await chrome.scripting.executeScript({
         target: { tabId: tab.id },
         files: ['solver.js', 'crossword.js', 'wordsearch.js', 'g1common.js',
-                'dito.js', 'soletra.js', 'combinado.js', 'labirinto.js', 'content.js']
+                'dito.js', 'soletra.js', 'combinado.js', 'labirinto.js', 'revelar.js', 'content.js']
       });
       await new Promise(r => setTimeout(r, 320));
       const pong = await chrome.tabs.sendMessage(tab.id, { action: 'ping' });
@@ -164,8 +197,7 @@ document.addEventListener('DOMContentLoaded', () => {
       badge.textContent = res.strategy;
       badge.className = 'badge on';
       infoEl.textContent = textoInfo(res);
-      acaoEl.disabled = false;
-      acaoEl.textContent = jogo.acao;
+      pintarBotao();
       sub.textContent = 'jogo detectado';
       log('');
     } else {
@@ -175,8 +207,7 @@ document.addEventListener('DOMContentLoaded', () => {
       badge.textContent = '—';
       badge.className = 'badge';
       infoEl.textContent = '';
-      acaoEl.disabled = true;
-      acaoEl.textContent = 'Abra um jogo do G1';
+      pintarBotao();
       sub.textContent = 'nada detectado nesta aba';
       const issue = res.diag && res.diag.issues && res.diag.issues[0];
       log(MSG[issue] || 'Dica: abra um dos jogos do menu abaixo.');
@@ -245,6 +276,32 @@ document.addEventListener('DOMContentLoaded', () => {
   async function executar() {
     if (!jogo) return;
     acaoEl.disabled = true;
+
+    // ── MODO ASSISTIDO: pinta a solução e para por aí ──────────────────────────
+    if (modoAcao === 'assistido' && jogo.ver) {
+      log('mostrando a solução (nada é preenchido)…');
+      const r = await send({ action: 'revelar', opts: opts() });
+      if (!r) { acaoEl.disabled = false; return; }
+      if (r.error) { log('erro: ' + r.error); acaoEl.disabled = false; return; }
+      if (r.success) {
+        const partes = [];
+        if (r.palavra) partes.push('palavra: ' + r.palavra);
+        if (r.palavras) partes.push(r.palavras + ' palavras');
+        if (r.grupos) partes.push(r.grupos + ' grupos');
+        if (r.pintadas) partes.push(r.pintadas + ' marcas na página');
+        if (r.casas) partes.push(r.casas + ' casas no trajeto');
+        if (r.marcadas) partes.push(r.marcadas + ' células destacadas');
+        sub.textContent = 'solução na página — você joga';
+        log((partes.join(' · ') || 'pronto') + ' · veja o painel na página');
+        if (fecharEl.checked) setTimeout(() => window.close(), 1100);
+      } else {
+        sub.textContent = 'não consegui mostrar';
+        log((r.reason || r.erro || 'sem detalhes') + ' — o painel na página explica.');
+      }
+      acaoEl.disabled = false;
+      return;
+    }
+
     log('trabalhando… (modo ' + modo + ')');
     try {
       if (jogo.id === 'sudoku.com') { await cdpSudoku(opts()); return; }
@@ -281,8 +338,8 @@ document.addEventListener('DOMContentLoaded', () => {
   acaoEl.addEventListener('click', executar);
   $('detectar').addEventListener('click', detectar);
   $('limpar').addEventListener('click', async () => {
-    await send({ action: 'limpar-painel' });
-    log('painel da página fechado');
+    await send({ action: 'limpar-marcas' });
+    log('marcas e painel removidos da página');
   });
 
   // ── ao abrir ───────────────────────────────────────────────────────────────

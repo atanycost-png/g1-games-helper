@@ -116,13 +116,19 @@
         const cls = String(span.className || '');
         const t = (span.innerText || '').trim();
         if (!/^[1-9]$/.test(t)) continue;
+        // ⚠️ No modo assistido (revelar.js) cada célula vazia ganha um SPAN com a
+        // solução. Sem este filtro a próxima detecção leria o fantasma como valor
+        // do jogo — e o tabuleiro apareceria "resolvido" sem o jogo saber disso.
+        if (cls.indexOf('__g1g_ghost') !== -1) continue;
         if (/note|annot|pencil|anota|small|candidate|corner|center/i.test(cls)) continue;
         value = parseInt(t, 10);
         given = !cls.includes('user-number');
         break;
       }
       // Se todos os dígitos achados eram anotações, não há valor real aqui.
-      if (value === 0 && spans.some(s => /^[1-9]$/.test((s.innerText || '').trim()))) {
+      if (value === 0 && spans.some(s =>
+            /^[1-9]$/.test((s.innerText || '').trim()) &&
+            String(s.className || '').indexOf('__g1g_ghost') === -1)) {
         value = -1;   // marca: célula tem dígitos mas todos parecem anotação
       }
 
@@ -689,6 +695,21 @@
     }
   }
 
+  /**
+   * MODO ASSISTIDO: mostra a solução na página sem jogar. Quem preenche é o
+   * usuário — nada é digitado, nada é submetido (ver revelar.js).
+   */
+  async function actionRevelar(opts) {
+    if (typeof revelarJogo !== 'function') {
+      return { success: false, reason: 'modulo-assistido-ausente' };
+    }
+    const gd = detected || await detectGridWithRetry(6000);
+    if (!gd) return { success: false, reason: 'no-grid-detected', diag: diagnosePage() };
+    detected = gd;
+    const r = await revelarJogo(gd, opts || {});
+    return Object.assign({ success: !!r.ok, strategy: gd.strategy, modo: 'assistido' }, r);
+  }
+
   async function actionFill(solution, opts) {
     const gd = detected || await detectGridWithRetry(4000);
     if (!gd) return { success: false, reason: 'no-grid', diag: diagnosePage() };
@@ -797,6 +818,12 @@
         if (A === 'fill') return await actionFill(msg.solution, msg.opts);
         if (A === 'plan') return await actionPlan(msg.solution);
         if (A === 'auto') return await actionAuto(msg.opts);
+        if (A === 'revelar') return await actionRevelar(msg.opts);
+        if (A === 'limpar-marcas') {
+          if (typeof revelarLimpar === 'function') return revelarLimpar(true);
+          if (typeof gcPainelFechar === 'function') gcPainelFechar();
+          return { ok: true };
+        }
         if (A === 'limpar-painel') { if (typeof gcPainelFechar === 'function') gcPainelFechar(); return { ok: true }; }
         return { error: 'unknown-action' };
       } catch (e) {
@@ -818,7 +845,7 @@
     window.__g1Helper = {
       diagnosePage, detectGrid, detectGridWithRetry, extractGrid, solutionFor,
       fillCells, actionDetect, actionExtract, actionSolve, actionAuto, actionFill,
-      resolverJogo, JOGOS_MODULO
+      actionRevelar, resolverJogo, JOGOS_MODULO
     };
   }
 

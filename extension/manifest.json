@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
   "name": "G1 Games Helper",
-  "version": "4.0.0",
-  "description": "Resolve Sudoku, Dito, Soletra, Combinado, Labirinto, Caça-Palavras e Cruzadas do G1 e do Sudoku.com, com ritmo humanizado.",
+  "version": "4.1.0",
+  "description": "Mostra a solução ou resolve os jogos do G1 (Sudoku, Dito, Soletra, Combinado, Labirinto, Caça-Palavras, Cruzadas).",
   "permissions": [
     "activeTab",
     "scripting",
@@ -39,6 +39,7 @@
         "soletra.js",
         "combinado.js",
         "labirinto.js",
+        "revelar.js",
         "content.js"
       ]
     }

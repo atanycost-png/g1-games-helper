@@ -22,16 +22,22 @@
   const ID_CARD = '__g1u_card';
   const ID_CSS = '__g1u_css';
   const CHAVE_RITMO = '__g1u_ritmo';
+  const CHAVE_ACAO = '__g1u_acao_modo';
 
   const JOGOS = [
-    { id: 'dito', nome: 'Dito', emoji: '🐴', acao: 'Resolver a palavra do dia', url: '/jogos/dito/' },
-    { id: 'soletra', nome: 'Soletra', emoji: '🔤', acao: 'Digitar as palavras', url: '/jogos/soletra/' },
-    { id: 'combinado', nome: 'Combinado', emoji: '🧩', acao: 'Resolver os 4 grupos', url: '/jogos/combinado/' },
-    { id: 'labirinto', nome: 'Labirinto', emoji: '🌀', acao: 'Mostrar o caminho (você traça)', url: '/jogos/labirinto/' },
-    { id: 'wordsearch', nome: 'Caça-Palavras', emoji: '🔎', acao: 'Destacar as palavras', url: '/jogos/caca-palavras/' },
-    { id: 'crossword', nome: 'Cruzadas', emoji: '⬜', acao: 'Preencher o tabuleiro', url: '/jogos/palavras-cruzadas/' },
-    { id: 'g1', nome: 'Sudoku (G1)', emoji: '🔢', acao: 'Resolver e preencher', url: '/jogos/sudoku/' }
+    { id: 'dito', nome: 'Dito', emoji: '🐴', acao: 'Resolver a palavra do dia', ver: 'Mostrar a palavra do dia', url: '/jogos/dito/' },
+    { id: 'soletra', nome: 'Soletra', emoji: '🔤', acao: 'Digitar as palavras', ver: 'Mostrar as palavras', url: '/jogos/soletra/' },
+    { id: 'combinado', nome: 'Combinado', emoji: '🧩', acao: 'Resolver os 4 grupos', ver: 'Mostrar os grupos', url: '/jogos/combinado/' },
+    { id: 'labirinto', nome: 'Labirinto', emoji: '🌀', acao: 'Mostrar o caminho (você traça)', ver: 'Mostrar o caminho', url: '/jogos/labirinto/' },
+    { id: 'wordsearch', nome: 'Caça-Palavras', emoji: '🔎', acao: 'Destacar as palavras', ver: 'Destacar as palavras', url: '/jogos/caca-palavras/' },
+    { id: 'crossword', nome: 'Cruzadas', emoji: '⬜', acao: 'Preencher o tabuleiro', ver: 'Mostrar as letras', url: '/jogos/palavras-cruzadas/' },
+    { id: 'g1', nome: 'Sudoku (G1)', emoji: '🔢', acao: 'Resolver e preencher', ver: 'Mostrar os números', url: '/jogos/sudoku/' }
   ];
+
+  const MODOS_ACAO = {
+    assistido: 'a solução aparece, quem joga é você',
+    automatico: 'o helper joga por você'
+  };
 
   // o Sudoku.com NÃO entra: o preenchimento dele depende de input real
   // (chrome.debugger), que não existe em userscript.
@@ -47,7 +53,8 @@
     rapido: { human: false, speed: 3, nota: 'sem pausas' }
   };
 
-  UI.modo = 'humano';
+  UI.modo = 'humano';          // ritmo (só importa no modo automático)
+  UI.modoAcao = 'assistido';   // assistido = só mostra | automatico = joga
   UI.jogo = null;
   UI.detectado = null;
 
@@ -143,6 +150,11 @@
         <div class="h"><span class="pt"></span><b id="__g1u_jogo">—</b>
           <small>G1 Helper</small><button class="x" id="__g1u_fechar">✕</button></div>
         <div class="info" id="__g1u_info"></div>
+        <div class="t" style="margin-top:2px"><span>Como age</span><small id="__g1u_acao_nota"></small></div>
+        <div class="seg" id="__g1u_acoes" style="margin-bottom:9px">
+          <button data-acao="assistido">Só mostrar</button>
+          <button data-acao="automatico">Resolver</button>
+        </div>
         <button class="acao" id="__g1u_acao" disabled>—</button>
         <div class="aviso" id="__g1u_aviso" hidden></div>
         <div class="sec">
@@ -161,6 +173,13 @@
       document.body.appendChild(c);
 
       c.querySelector('#__g1u_fechar').onclick = () => UI.fechar();
+      c.querySelector('#__g1u_acoes').addEventListener('click', (e) => {
+        const b = e.target.closest('button[data-acao]');
+        if (!b) return;
+        UI.modoAcao = b.dataset.acao;
+        gravar(CHAVE_ACAO, UI.modoAcao);
+        UI.pintarAcao();
+      });
       c.querySelector('#__g1u_seg').addEventListener('click', (e) => {
         const b = e.target.closest('button[data-modo]');
         if (!b) return;
@@ -180,6 +199,31 @@
     UI.pintarRitmo();
     UI.pintarChips();
   }
+
+  /** Reflete o modo de ação escolhido (só mostrar x resolver). */
+  UI.pintarAcao = function () {
+    const card = document.getElementById(ID_CARD);
+    if (!card) return;
+    [...card.querySelectorAll('#__g1u_acoes button')].forEach(b => {
+      b.classList.toggle('on', b.dataset.acao === UI.modoAcao);
+    });
+    const n = card.querySelector('#__g1u_acao_nota');
+    if (n) n.textContent = MODOS_ACAO[UI.modoAcao] || '';
+    // o ritmo só faz diferença quando o helper joga
+    const blocoRitmo = card.querySelector('#__g1u_seg');
+    if (blocoRitmo) blocoRitmo.parentElement.style.opacity = UI.modoAcao === 'assistido' ? '.45' : '1';
+    UI.pintarBotao();
+  };
+
+  /** Rótulo do botão principal: muda com o jogo E com o modo de ação. */
+  UI.pintarBotao = function () {
+    const acaoEl = document.getElementById('__g1u_acao');
+    if (!acaoEl) return;
+    if (!UI.jogo) { acaoEl.textContent = 'Abra um jogo do G1'; acaoEl.disabled = true; return; }
+    const assistido = UI.modoAcao === 'assistido' && UI.jogo.ver;
+    acaoEl.textContent = assistido ? UI.jogo.ver : UI.jogo.acao;
+    acaoEl.disabled = false;
+  };
 
   UI.pintarRitmo = function () {
     const card = document.getElementById(ID_CARD);
@@ -259,10 +303,9 @@
       pt.style.background = '#57d97f';
       jogoEl.textContent = UI.jogo.emoji + ' ' + UI.jogo.nome;
       infoEl.textContent = UI.textoInfo(res);
-      acaoEl.disabled = false;
-      acaoEl.textContent = UI.jogo.acao;
+      UI.pintarBotao();
       UI.aviso(res.strategy === 'labirinto'
-        ? 'Nesta versão (userscript) não existe input real: o caminho é mostrado no painel e você traça com o mouse.'
+        ? 'Nesta versão (userscript) não existe input real: o caminho é mostrado e você traça com o mouse.'
         : '');
       UI.log('');
     } else {
@@ -300,6 +343,22 @@
     UI.log('trabalhando… (ritmo ' + UI.modo + ')');
 
     try {
+      // ── MODO ASSISTIDO: pinta a solução na página e para por aí ────────────
+      if (UI.modoAcao === 'assistido' && UI.jogo.ver) {
+        if (typeof revelarJogo !== 'function') { UI.log('módulo assistido ausente'); return; }
+        const r = await revelarJogo(UI.detectado, opts);
+        if (!r || !r.ok) { UI.log('não consegui mostrar: ' + ((r && (r.erro || r.reason)) || '?')); return; }
+        const partes = [];
+        if (r.palavra) partes.push('palavra: ' + r.palavra);
+        if (r.palavras) partes.push(r.palavras + ' palavras');
+        if (r.grupos) partes.push(r.grupos + ' grupos');
+        if (r.pintadas) partes.push(r.pintadas + ' marcas na página');
+        if (r.casas) partes.push(r.casas + ' casas no trajeto');
+        if (r.marcadas) partes.push(r.marcadas + ' células destacadas');
+        UI.log((partes.join(' · ') || 'pronto') + ' — agora é com você. Veja o painel na página.');
+        return;
+      }
+
       // O Labirinto não aceita input sintético: aqui só mostramos o caminho.
       if (UI.jogo.id === 'labirinto') {
         if (typeof labirintoPainel === 'function') await labirintoPainel('siga as setas com o mouse');
@@ -342,6 +401,12 @@
     if (typeof GM_registerMenuCommand !== 'function') return;
     try {
       GM_registerMenuCommand('🧩 Abrir o menu do helper', UI.abrir);
+      GM_registerMenuCommand('👀 Modo: só mostrar a solução', () => {
+        UI.modoAcao = 'assistido'; gravar(CHAVE_ACAO, 'assistido'); UI.pintarAcao(); UI.abrir();
+      });
+      GM_registerMenuCommand('🤖 Modo: resolver por mim', () => {
+        UI.modoAcao = 'automatico'; gravar(CHAVE_ACAO, 'automatico'); UI.pintarAcao(); UI.abrir();
+      });
       GM_registerMenuCommand('▶️ Resolver o jogo desta página', () => { UI.abrir(); UI.executar(); });
       GM_registerMenuCommand('🎚️ Ritmo: Humano', () => { UI.modo = 'humano'; gravar(CHAVE_RITMO, 'humano'); UI.pintarRitmo(); });
       GM_registerMenuCommand('🎚️ Ritmo: Normal', () => { UI.modo = 'normal'; gravar(CHAVE_RITMO, 'normal'); UI.pintarRitmo(); });
@@ -355,7 +420,10 @@
   UI.iniciar = function () {
     UI.modo = String(ler(CHAVE_RITMO, 'humano') || 'humano');
     if (!RITMOS[UI.modo]) UI.modo = 'humano';
+    UI.modoAcao = String(ler(CHAVE_ACAO, 'assistido') || 'assistido');
+    if (!MODOS_ACAO[UI.modoAcao]) UI.modoAcao = 'assistido';
     montar();
+    UI.pintarAcao();
     UI.registrarMenu();
     // se já estiver numa página de jogo, deixa o botão pulsando para chamar atenção
     UI.detectar().then(ok => {

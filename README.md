@@ -98,9 +98,35 @@ Nenhum gabarito é embutido na extensão: ela lê o que o site já manda.
 
 Detalhes, evidências e armadilhas de cada um estão em [`docs/REFERENCIA.md`](docs/REFERENCIA.md).
 
+## Dois modos: **só mostrar** e **resolver**
+
+O popup (e o menu do userscript) tem o controle **Como age**:
+
+| Modo | O que faz | Para quem |
+|---|---|---|
+| 👀 **Só mostrar** *(padrão)* | pinta a solução na página e para. Nada é digitado, nada é submetido — se você não jogar, o jogo fica exatamente como estava. | quem quer jogar, mas travou |
+| 🤖 **Resolver** | joga por você, no ritmo escolhido. | quem só quer o jogo feito |
+
+O que cada jogo mostra no modo assistido:
+
+| Jogo | O que aparece na página |
+|---|---|
+| Sudoku (G1) | dígito em rosa em cada casa vazia |
+| Dito | a palavra do dia em letras rosa na primeira linha vazia + painel |
+| Soletra | painel com as palavras do dia (★ = pangrama) e contador que acompanha você |
+| Combinado | painel com os 4 grupos + selo colorido em cada palavra do tabuleiro |
+| Labirinto | trajeto desenhado **sobre** o canvas, em linha tracejada, com ▶ no início |
+| Caça-Palavras | destaque das palavras na grade + legenda de cores |
+| Cruzadas | letra rosa em cada casa vazia |
+
+Todas as marcas são elementos próprios (`.__g1g_ghost`), `pointer-events: none`,
+e **nunca** tocam no estado do jogo: a detecção inclusive as ignora, então rodar
+o helper de novo continua enxergando o tabuleiro como ele realmente está.
+*Limpar marcas* (no popup) remove tudo.
+
 ## Modo humanizado
 
-O ritmo é aplicado em todos os jogos:
+O ritmo (só faz diferença no modo **Resolver**) é aplicado em todos os jogos:
 
 - **Dito** — digita letra a letra com pausa variável e confirma com ENTER;
 - **Soletra** — digita cada palavra tecla a tecla, com pausa maior a cada 4;

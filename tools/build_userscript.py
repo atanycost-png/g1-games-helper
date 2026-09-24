@@ -41,6 +41,7 @@ MODULOS = [
     "soletra.js",
     "combinado.js",
     "labirinto.js",
+    "revelar.js",      # modo assistido: mostra a solução sem jogar
     "content.js",      # cadeia de detecção + ações (expõe window.__g1Helper)
 ]
 
@@ -107,8 +108,8 @@ RODAPE = """
 # ⚠️ A descrição do userscript NÃO é a mesma da extensão: aqui não existe
 # chrome.debugger, então o Sudoku.com fica fora e o Labirinto é assistido. O
 # Greasy Fork exige que a descrição corresponda ao que o script realmente faz.
-DESCRICAO = ("Resolve Sudoku, Dito, Soletra, Combinado, Caça-Palavras e Cruzadas "
-             "do G1; no Labirinto mostra o caminho. Ritmo humanizado.")
+DESCRICAO = ("Mostra ou resolve Sudoku, Dito, Soletra, Combinado, Caça-Palavras e "
+             "Cruzadas do G1; no Labirinto mostra o caminho.")
 
 
 def montar():
