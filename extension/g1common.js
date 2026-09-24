@@ -149,35 +149,41 @@
       document.body.appendChild(el);
     }
     const cor = CORES_JOGO[titulo.toLowerCase()] || '#4FC3F7';
-    const esc = s => String(s == null ? '' : s)
-      .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    const mk = (tag, text, css) => {
+      const n = document.createElement(tag);
+      if (text != null) n.textContent = String(text);
+      if (css) n.style.cssText = css;
+      return n;
+    };
 
-    let h = '<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">' +
-      '<span style="width:9px;height:9px;border-radius:50%;background:' + cor + '"></span>' +
-      '<b style="flex:1;font-size:13.5px">' + esc(titulo) + '</b>' +
-      '<span style="opacity:.65;font-size:11px">G1 Helper</span>' +
-      '<button id="__g1g_fechar" style="all:unset;cursor:pointer;opacity:.7;padding:0 3px">✕</button></div>';
+    const cab = mk('div', null, 'display:flex;align-items:center;gap:8px;margin-bottom:8px');
+    cab.appendChild(mk('span', null, 'width:9px;height:9px;border-radius:50%;background:' + cor));
+    cab.appendChild(mk('b', titulo, 'flex:1;font-size:13.5px'));
+    cab.appendChild(mk('span', 'G1 Helper', 'opacity:.65;font-size:11px'));
+    const fechar = mk('button', '✕', 'all:unset;cursor:pointer;opacity:.7;padding:0 3px');
+    fechar.id = '__g1g_fechar';
+    cab.appendChild(fechar);
+    el.appendChild(cab);
 
-    if (sub) h += '<div style="opacity:.78;font-size:12px;margin:-3px 0 9px">' + esc(sub) + '</div>';
-
+    if (sub) el.appendChild(mk('div', sub, 'opacity:.78;font-size:12px;margin:-3px 0 9px'));
     for (const s of (secoes || [])) {
-      if (s.titulo) h += '<div style="font-size:11px;letter-spacing:.04em;text-transform:uppercase;' +
-        'opacity:.55;margin:10px 0 5px">' + esc(s.titulo) + '</div>';
-      if (s.html) { h += s.html; continue; }
+      if (s.titulo) el.appendChild(mk('div', s.titulo,
+        'font-size:11px;letter-spacing:.04em;text-transform:uppercase;opacity:.55;margin:10px 0 5px'));
+      // Nenhum chamador atual usa s.html. Se um módulo futuro precisar de HTML,
+      // ele deve construir nós DOM, não reabrir um sink de HTML.
+      if (s.html) { el.appendChild(mk('div', s.html)); continue; }
       for (const it of (s.itens || [])) {
-        h += '<div style="display:flex;align-items:center;gap:7px;margin:3px 0">' +
-          (it.cor ? '<span style="width:10px;height:10px;border-radius:3px;background:' + it.cor + ';flex:0 0 auto"></span>' : '') +
-          '<span style="flex:1">' + esc(it.txt) + '</span>' +
-          (it.nota ? '<span style="opacity:.55;font-size:11px">' + esc(it.nota) + '</span>' : '') +
-          '</div>';
+        const row = mk('div', null, 'display:flex;align-items:center;gap:7px;margin:3px 0');
+        if (it.cor) row.appendChild(mk('span', null,
+          'width:10px;height:10px;border-radius:3px;background:' + it.cor + ';flex:0 0 auto'));
+        row.appendChild(mk('span', it.txt, 'flex:1'));
+        if (it.nota) row.appendChild(mk('span', it.nota, 'opacity:.55;font-size:11px'));
+        el.appendChild(row);
       }
     }
-    if (rodape) h += '<div style="opacity:.55;font-size:11px;margin-top:10px;border-top:1px solid rgba(255,255,255,.1);padding-top:8px">' +
-      esc(rodape) + '</div>';
-
-    el.innerHTML = h;
-    const x = document.getElementById('__g1g_fechar');
-    if (x) x.onclick = GC.painelFechar;
+    if (rodape) el.appendChild(mk('div', rodape,
+      'opacity:.55;font-size:11px;margin-top:10px;border-top:1px solid rgba(255,255,255,.1);padding-top:8px'));
+    fechar.onclick = GC.painelFechar;
     return el;
   };
 

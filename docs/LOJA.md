@@ -176,6 +176,10 @@ A variante Firefox foi iniciada com uma saída própria gerada da mesma fonte:
 npm run check:firefox
 npm run build:firefox
 npx web-ext lint --source-dir dist/firefox
+# smoke funcional no Firefox (Windows):
+python -m venv .venv-firefox
+.venv-firefox/Scripts/python.exe -m pip install selenium
+npm run test:firefox
 ```
 
 Artefatos:

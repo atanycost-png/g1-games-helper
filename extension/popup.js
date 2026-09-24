@@ -121,10 +121,20 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // ── chips (menu de jogos) ──────────────────────────────────────────────────
   function pintarChips() {
-    chipsEl.innerHTML = JOGOS.map(j =>
-      `<button class="chip${jogo && jogo.id === j.id ? ' on' : ''}" data-id="${j.id}" title="${j.acao}">
-         <span class="chip-emoji">${j.emoji}</span><span>${j.nome}</span>
-       </button>`).join('');
+    chipsEl.replaceChildren();
+    for (const j of JOGOS) {
+      const b = document.createElement('button');
+      b.className = 'chip' + (jogo && jogo.id === j.id ? ' on' : '');
+      b.dataset.id = j.id;
+      b.title = j.acao;
+      const emoji = document.createElement('span');
+      emoji.className = 'chip-emoji';
+      emoji.textContent = j.emoji;
+      const nome = document.createElement('span');
+      nome.textContent = j.nome;
+      b.append(emoji, nome);
+      chipsEl.appendChild(b);
+    }
   }
   chipsEl.addEventListener('click', (e) => {
     const b = e.target.closest('.chip');

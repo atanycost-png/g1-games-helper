@@ -207,16 +207,28 @@
       ].join(';');
       document.body.appendChild(leg);
     }
-    leg.innerHTML =
-      '<div style="font-weight:700;margin-bottom:6px">Palavras (' + palavras.length + ')</div>' +
-      palavras.map(w =>
-        '<div style="display:flex;align-items:center;gap:7px;margin:3px 0">' +
-        '<span style="width:11px;height:11px;border-radius:3px;background:' + w.cor + ';display:inline-block"></span>' +
-        '<span>' + w.palavra + '</span>' +
-        '<span style="opacity:.6;font-size:11px">' + w.casas.length + '</span>' +
-        '</div>').join('') +
-      '<div style="opacity:.6;font-size:11px;margin-top:7px">' +
-      'Marque na grade arrastando o mouse.</div>';
+    leg.replaceChildren();
+    const titulo = document.createElement('div');
+    titulo.textContent = 'Palavras (' + palavras.length + ')';
+    titulo.style.cssText = 'font-weight:700;margin-bottom:6px';
+    leg.appendChild(titulo);
+    for (const w of palavras) {
+      const row = document.createElement('div');
+      row.style.cssText = 'display:flex;align-items:center;gap:7px;margin:3px 0';
+      const swatch = document.createElement('span');
+      swatch.style.cssText = 'width:11px;height:11px;border-radius:3px;display:inline-block;background:' + w.cor;
+      const word = document.createElement('span');
+      word.textContent = w.palavra;
+      const count = document.createElement('span');
+      count.textContent = String(w.casas.length);
+      count.style.cssText = 'opacity:.6;font-size:11px';
+      row.append(swatch, word, count);
+      leg.appendChild(row);
+    }
+    const hint = document.createElement('div');
+    hint.textContent = 'Marque na grade arrastando o mouse.';
+    hint.style.cssText = 'opacity:.6;font-size:11px;margin-top:7px';
+    leg.appendChild(hint);
   };
 
   /**

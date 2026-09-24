@@ -16,6 +16,7 @@
     "check:store": "python tools/build_store.py --check",
     "build:firefox": "python tools/build_firefox.py",
     "check:firefox": "python tools/build_firefox.py --check",
+    "test:firefox": ".venv-firefox/Scripts/python.exe tools/test_firefox_assistido.py",
     "test:userscript": "python tools/test_userscript_cdp.py",
     "test:popup": "python tools/test_popup_cdp.py"
   }
