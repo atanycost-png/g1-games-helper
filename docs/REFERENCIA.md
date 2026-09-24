@@ -526,6 +526,33 @@ Como achar o chunk sem saber o hash: varrer
 ⚠️ O estado da partida fica em `localStorage['@g1/dito']` (estatísticas) — jogar no
 perfil de teste não consome a partida do perfil logado.
 
+⚠️ **E é justamente esse localStorage que cria a armadilha da virada do dia.** Na
+manhã de 24/09 o jogo restaurou no DOM o tabuleiro vencedor de 23/09 (`MOEDA`),
+todo com classe `correct`. A primeira versão do módulo olhava só "existe linha com
+todas as letras `correct`?" e concluía **"já estava resolvido hoje"** — pulando o
+desafio novo (`LAZER`) silenciosamente.
+
+Correção: a palavra do dia (lida da base do site) é o critério. Linha vencedora só
+conta se for **igual à palavra de hoje**; se for a de ontem, o painel avisa
+*"tabuleiro de ontem na tela"* e o jogo novo é jogado.
+
+Verificação (forjando o cenário no DOM):
+
+| Cenário | Resultado |
+|---|---|
+| `MOEDA` no tabuleiro, hoje = `LAZER` | `{acertou: false, acertouOntem: true}` ✔ |
+| tabuleiro igual à palavra de hoje | `{acertou: true}` ✔ |
+| `solve()` no dia novo | **"Acertou! A palavra correta é L A Z E R"** ✔ |
+
+Observação de calendário: a base traz a entrada do dia e a rotação é à meia-noite
+local (o aviso do jogo dizia "Um novo desafio em: 01:31:17" às 22h28 de 23/09).
+Em 24/09 as letras do Soletra mudaram de `zaimort` (29 palavras) para `xadeiop`
+(23 palavras) — bom sinal de que a leitura por data funciona em dia novo.
+
+Detalhe de UI: a leitura do resultado precisa esperar a animação de "flip"
+(~1 s); lendo uma vez só, o painel anunciava "tentativa enviada" no lugar de
+"acertou" mesmo com a vitória na tela.
+
 ---
 
 ## 10. Soletra (`/jogos/soletra/`) — Spelling Bee
@@ -674,6 +701,9 @@ também o remove.
 | 2026-09-23 | **Cruzadão** (não só o mini): `cruzada.json` tem a mesma estrutura; corrigida a URL por página (a regex antiga fazia o cruzadão baixar o JSON do mini) e a leitura assíncrona do SVG (74/74 preenchido) |
 | 2026-09-23 | Extensão **v4.0.0**: `g1common.js` (base + painel + ritmo) e um módulo por jogo; popup virou menu (card do jogo, ritmo persistido, chips); `cdpDrag` no background para o labirinto |
 | 2026-09-23 | Projeto publicado em **https://github.com/atanycost-png/g1-games-helper** (MIT, autoria só pelo usuário do GitHub) |
+| 2026-09-24 | Repo: `PRIVACY.md`, smoke test do popup (`test_popup_cdp.py`) e auditoria de lojas (`docs/LOJA.md`) — achados: `storage` faltando no manifest (quebrava o popup), `description` com 173 chars (limite 132) e permissão `tabs` morta |
+| 2026-09-24 | **Versão userscript** para Tampermonkey/Violentmonkey/Greasemonkey: `userscript/g1-games-helper.user.js` gerado por `tools/build_userscript.py` dos MESMOS módulos, com menu na página e validação das regras do Greasy Fork; testado na página real (caça-palavras, dito, soletra) |
+| 2026-09-24 | **Bug do Dito na virada do dia**: o jogo restaura o tabuleiro vencedor de ontem e o módulo dizia "já estava resolvido hoje", pulando o desafio novo. Agora a palavra do dia é o critério — validado forjando o cenário e resolvendo o `LAZER` de 24/09 |
 
 > Nota de nomenclatura: neste projeto **"Bend 2" é a linguagem de programação**
 > (bendlang/bend, doc em `D:\Dev\Projetos\bend-docs`) — **não** o Cheat Engine
