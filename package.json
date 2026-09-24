@@ -10,6 +10,9 @@
     "test": "node test/solver.test.js",
     "test:integration": "python test/integration_test.py",
     "test:all": "npm run test && npm run test:integration",
-    "test:jogos": "python tools/test_jogos_cdp.py"
+    "test:jogos": "python tools/test_jogos_cdp.py",
+    "build:userscript": "python tools/build_userscript.py",
+    "test:userscript": "python tools/test_userscript_cdp.py",
+    "test:popup": "python tools/test_popup_cdp.py"
   }
 }

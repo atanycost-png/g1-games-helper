@@ -33,6 +33,40 @@ da base de palavras embutida no bundle do jogo. Tudo roda no cliente.
 > qualquer atualização dos arquivos — content scripts só entram em páginas abertas
 > *depois* da instalação/atualização.
 
+## Userscript (Tampermonkey / Violentmonkey / Greasemonkey)
+
+Além da extensão, o projeto gera um **userscript único** — útil para quem não
+quer instalar extensão (ou usa Firefox, onde o gerenciador já resolve tudo):
+
+```
+userscript/g1-games-helper.user.js     ← gerado por tools/build_userscript.py
+```
+
+**Instalar pelo GitHub:** abra
+<https://raw.githubusercontent.com/atanycost-png/g1-games-helper/master/userscript/g1-games-helper.user.js>
+com o gerenciador instalado — ele oferece a instalação.
+
+O menu fica **na própria página**: um botão 🧩 no canto abre um cartão com o jogo
+detectado, o botão de ação rotulado, o ritmo (Humano/Normal/Rápido) e atalhos para
+cada jogo. Nos gerenciadores que suportam, também entram atalhos no menu nativo
+(`GM_registerMenuCommand`).
+
+| | Extensão | Userscript |
+|---|---|---|
+| Sudoku (G1), Dito, Soletra, Combinado, Caça-Palavras, Cruzadas | ✅ | ✅ |
+| Labirinto | traça o caminho sozinho | **mostra o caminho** (você traça) |
+| Sudoku.com (canvas) | ✅ | ❌ indisponível |
+| Preferências | `chrome.storage` | `GM_setValue` (fallback `localStorage`) |
+
+O motivo das duas lacunas é o mesmo: o Sudoku.com e o arrasto do Labirinto exigem
+**input real** (`Input.dispatchMouseEvent`), que só existe via `chrome.debugger` —
+API de extensão, indisponível em userscript.
+
+> O arquivo `.user.js` é **gerado** a partir dos mesmos módulos da extensão, então
+> não há duas bases de código para manter. Depois de mexer em `extension/*.js`,
+> rode `python tools/build_userscript.py` (ele também valida as regras do Greasy
+> Fork: descrição ≤132, licença, `@match` restrito, sem `eval`, sem CDN, <2 MB).
+
 ## Uso
 
 O popup detecta o jogo da aba e mostra **um botão de ação** já com o que vai fazer

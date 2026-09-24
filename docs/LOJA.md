@@ -70,9 +70,44 @@ Mudanças necessárias, todas mapeadas:
 > desaparece: continua sendo uma extensão que resolve jogos por você. É
 > distribuição de risco baixo e reversível — não é certeza de aprovação.
 
+### C) Greasy Fork (userscript) — **a rota com menos atrito**
+
+Não é uma loja de extensões: é um repositório de *scripts de usuário*. O poder de
+polícia é bem menor e as regras são objetivas (verificadas na fonte em 2026-09-23):
+descrição obrigatória, sem código ofuscado/minificado, `@license`, bibliotecas por
+`@require`, **`@match` apenas nos sites onde o script realmente funciona**, limite
+de 2 MB, sem checagem de update mais de 1×/dia.
+
+| Item | Situação |
+|---|---|
+| Código obfuscado/minificado | ✗ não usamos — 116 KB, 2.900 linhas legíveis |
+| `@license` | ✓ MIT |
+| `@match` restrito | ✓ só `https://g1.globo.com/jogos/*` |
+| `eval` / `new Function` | ✓ ausentes |
+| CDN / código remoto | ✓ ausentes |
+| Tamanho | ✓ 116 KB (limite 2 MB) |
+| Descrição batendo com o escopo | ✓ cita só o que existe (Sudoku.com **fora**) |
+| Permissão `debugger` | ✓ não existe em userscript (deixa de ser bloqueador) |
+| Revisão de permissões amplas | ✓ não existe |
+| Assets de loja | ✓ não exige |
+
+O validador disso é o próprio build: `python tools/build_userscript.py` checa
+essas regras e falha se alguma quebrar.
+
+**O que continua valendo**: a marca "G1" no nome (renomear é mais seguro) e o risco
+de um dia o site mudar a estrutura — que é menor aqui, porque não há revisão para
+derrubar: no máximo o script para de funcionar até alguém ajustar.
+
+**Como publicar** (3 passos, precisa da sua conta):
+1. crie a conta em <https://greasyfork.org> e confirme o e-mail;
+2. *Add script* → cole o conteúdo de `userscript/g1-games-helper.user.js` no editor
+   (ou aponte para a URL raw do GitHub, que o Greasy Fork importa);
+3. publique — o Greasy Fork passa a servir o script e cuidar das atualizações.
+
 ## Recomendação
 
 Se o objetivo é **compartilhar com amigos**: caminho A (GitHub) resolve hoje e sem
-exposição. Se o objetivo é **ter na loja**: fazer o caminho B, e publicar primeiro
-no **Edge Add-ons** — a Microsoft é bem mais permissiva que o Google com esse tipo
-de extensão e o mesmo pacote serve.
+exposição — e o **caminho C (Greasy Fork)** é o melhor "publicar de verdade" sem
+enfrentar revisão de loja. Se o objetivo é **ter na loja de extensões**: fazer o
+caminho B, e publicar primeiro no **Edge Add-ons** — a Microsoft é bem mais
+permissiva que o Google com esse tipo de extensão e o mesmo pacote serve.
