@@ -713,11 +713,19 @@ estado antes/depois parece trivial e não é:
    (`garantirJogo`, via `detectGridWithRetry`) — se isso cair no meio da medição, o
    tabuleiro sai de "tela de abertura" para "rodada aberta" e o teste acusa jogada
    que não existiu. No Combinado isso deu `0 → 16` palavras selecionáveis.
-2. **Escolha uma métrica que só mude com jogada real.** Rótulos de casca mentem: no
-   Combinado os rótulos `G1..G4` aparecem **só por a rodada abrir**, não porque um
-   grupo foi resolvido. A medida honesta é a palavra deixar de ser
-   `button.cell--interactive` (grupo resolvido desativa suas 4 palavras).
-3. **Espere duas leituras iguais antes de aceitar** (`medir_estavel`): os jogos
+2. **Escolha uma métrica que só mude com jogada real.** Duas candidatas foram
+   descartadas no Combinado:
+   • rótulos `G1..G4` — aparecem **só por a rodada abrir** (o helper clica "Iniciar"),
+     não porque um grupo foi resolvido;
+   • `button.cell--interactive` — o jogo **não** desmarca a classe ao resolver
+     (medido no modo automático: 16 antes e 16 depois de resolver 4/4).
+   O sinal que muda é o slot do grupo passar a exibir suas palavras.
+3. **A medição tem que esconder os elementos do próprio helper.** O painel do modo
+   assistido lista as 4 palavras dos grupos — contar texto na página lê o painel
+   como se fosse grupo resolvido (0 → 16 sem ninguém jogar). Esconder, medir,
+   restaurar. Validação que fecha a questão: partida zerada → 0; com as marcas → 0;
+   depois do modo automático → 16.
+4. **Espere duas leituras iguais antes de aceitar** (`medir_estavel`): os jogos
    restauram a partida do dia de forma assíncrona pelo localStorage, e medir cedo
    demais pega o tabuleiro vazio.
 

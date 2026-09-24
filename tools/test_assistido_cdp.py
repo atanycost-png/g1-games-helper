@@ -68,12 +68,30 @@ MEDIDA = {
       ghosts: document.querySelectorAll('.__g1g_ghost').length,
       painel: !!document.getElementById('__g1g_panel')
     })""",
-    # NÃO medir rótulos "G1..G4": eles aparecem só por a rodada abrir (o helper
-    # clica "Iniciar" via garantirJogo), não porque um grupo foi resolvido — dava
-    # falso positivo. O sinal real é a palavra deixar de ser `cell--interactive`.
+    # Duas métricas erradas já foram descartadas aqui:
+    #   • rótulos "G1..G4"  → aparecem só por a rodada abrir (o helper clica
+    #     "Iniciar" via garantirJogo), não porque um grupo foi resolvido;
+    #   • `button.cell--interactive` → o jogo NÃO desmarca a classe ao resolver
+    #     (verificado no modo automático: 16 antes e 16 depois de resolver 4/4).
+    # O sinal que realmente muda é o slot do grupo passar a MOSTRAR suas palavras.
+    # Cada palavra aparece 1x no próprio botão; se aparecer também num slot, conta 2+.
     "combinado": """JSON.stringify({
       tipo: 'combinado',
-      ativos: document.querySelectorAll('button.cell--interactive').length,
+      // ⚠️ A medição precisa ESCONDER os elementos do próprio helper: o painel do
+      // modo assistido lista as 4 palavras dos grupos, e uma contagem ingênua de
+      // texto na página lê o painel como se fosse grupo resolvido (deu 0 -> 16 sem
+      // ninguém jogar). Esconde, mede, restaura.
+      palavrasEmSlots: (() => {
+        const meus = [...document.querySelectorAll('#__g1g_panel, #__g1g_legenda, .__g1g_ghost')];
+        const antes = meus.map(e => e.style.display);
+        meus.forEach(e => { e.style.display = 'none'; });
+        const palavras = [...document.querySelectorAll('button.cell')]
+          .map(c => (c.textContent || '').trim().toLowerCase()).filter(w => w.length > 2);
+        const txt = document.body.innerText.toLowerCase();
+        const n = palavras.filter(w => txt.split(w).length - 1 > 1).length;
+        meus.forEach((e, i) => { e.style.display = antes[i]; });
+        return n;
+      })(),
       ghosts: document.querySelectorAll('.__g1g_ghost').length,
       painel: !!document.getElementById('__g1g_panel')
     })""",
@@ -217,7 +235,7 @@ def testar(nome, url, p):
     # medição de ANTES (nada de número fixo no código — o fixture já mudou de 30
     # para 38 fixas uma vez e o teste passou a acusar falso positivo).
     nao_jogou = True
-    for chave in ("lidas", "preenchidas", "linhasComLetra", "ativos"):
+    for chave in ("lidas", "preenchidas", "linhasComLetra", "palavrasEmSlots"):
         if chave in (antes or {}) and chave in (depois or {}):
             if antes[chave] != depois[chave]:
                 # a única mudança aceitável é o fantasma no Dito entrar na contagem
