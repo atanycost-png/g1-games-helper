@@ -160,8 +160,9 @@ publicar.
 - [x] `node --check` nos JavaScript da variante
 - [x] invariantes: sem `debugger`, Sudoku.com, `<all_urls>`, background e marcadores
 - [x] smoke test do popup completo e do popup da loja
-- [ ] screenshots da loja
-- [ ] tile promocional e ícone final
+- [x] 3 screenshots 1280×800 em `assets/amo/final/`
+- [x] ícones 16/48/128 redesenhados
+- [ ] tile promocional final
 - [ ] ficha de práticas de dados e *single purpose*
 - [ ] submissão/revisão no Edge Add-ons
 - [ ] eventual submissão/revisão na Chrome Web Store
@@ -170,7 +171,29 @@ publicar.
 
 ### Build Firefox assistivo
 
-A variante Firefox foi iniciada com uma saída própria gerada da mesma fonte:
+A variante Firefox foi iniciada com uma saída própria gerada da mesma fonte.
+Os assets visuais do AMO também são reproduzíveis:
+
+```bash
+npm run build:amo-assets
+```
+
+Saídas:
+
+```text
+assets/amo/final/dito.png       # 1280×800, captura real
+assets/amo/final/labirinto.png  # 1280×800, captura real
+assets/amo/final/cruzadas.png   # 1280×800, captura real
+extension/icons/icon128.png
+extension/icons/icon48.png
+extension/icons/icon16.png
+```
+
+As três screenshots foram compostas a partir de capturas reais do modo assistido;
+o script não inventa tabuleiro, resultado ou estado. O ícone foi redesenhado como
+grade de lógica com uma célula rosa destacada, coerente com a solução assistiva.
+
+
 
 ```bash
 npm run check:firefox

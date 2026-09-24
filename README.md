@@ -98,6 +98,15 @@ Nenhum gabarito é embutido na extensão: ela lê o que o site já manda.
 
 Detalhes, evidências e armadilhas de cada um estão em [`docs/REFERENCIA.md`](docs/REFERENCIA.md).
 
+## Assets para Mozilla Add-ons
+
+As capturas reais e o ícone da variante Firefox ficam em [`assets/amo/final`](assets/amo/final).
+Para regenerá-los após novos testes:
+
+```bash
+npm run build:amo-assets
+```
+
 ## Dois modos: **só mostrar** e **resolver**
 
 O popup (e o menu do userscript) tem o controle **Como age**:
