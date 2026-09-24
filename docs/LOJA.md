@@ -168,6 +168,38 @@ publicar.
 
 ## Mozilla Add-ons (AMO): custo e situação
 
+### Build Firefox assistivo
+
+A variante Firefox foi iniciada com uma saída própria gerada da mesma fonte:
+
+```bash
+npm run check:firefox
+npm run build:firefox
+npx web-ext lint --source-dir dist/firefox
+```
+
+Artefatos:
+
+```text
+dist/firefox/
+dist/logic-games-helper-firefox.zip
+```
+
+Ela é **assistiva-only**: o popup não oferece o botão Resolver e força
+`modoAcao = 'assistido'` mesmo se existir uma preferência antiga no storage.
+Continua sem `debugger`, Sudoku.com, background e `<all_urls>`. O manifest inclui
+um ID Gecko estável e declara `data_collection_permissions: {required: [none]}`
+porque esta extensão não coleta nem transmite dados pessoais.
+
+A primeira validação real com `web-ext lint` passou com **0 erros e 0 notices**.
+Restaram 3 avisos de `innerHTML` dinâmico (`g1common.js`, `popup.js` e
+`wordsearch.js`); eles precisam ser revisados antes do upload final. Não são
+falhas de Manifest, mas são alertas de segurança do lint. Ainda falta executar
+um smoke test funcional dentro do Firefox; o lint sozinho não prova que o
+runtime de APIs e o popup se comportam igual ao Edge.
+
+
+
 Verificado em 2026-09-24 na documentação oficial da Mozilla: **não há taxa de
 publicação nem cobrança de cadastro indicada para o AMO**. A conta de
  desenvolvedor é integrada a uma conta Mozilla; a documentação oficial descreve

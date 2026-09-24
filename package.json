@@ -14,6 +14,8 @@
     "build:userscript": "python tools/build_userscript.py",
     "build:store": "python tools/build_store.py",
     "check:store": "python tools/build_store.py --check",
+    "build:firefox": "python tools/build_firefox.py",
+    "check:firefox": "python tools/build_firefox.py --check",
     "test:userscript": "python tools/test_userscript_cdp.py",
     "test:popup": "python tools/test_popup_cdp.py"
   }
