@@ -5,7 +5,11 @@ pitfalls e histórico. **Atualizar sempre que descobrir algo novo.**
 
 ---
 
-## 1. Estado atual (2026-09-23)
+## 1. Estado atual (2026-09-24)
+
+A v4.1.0 tem modo assistido, build completo e build de loja gerado por fonte única; ver §15.
+
+## 1.1. Estado histórico inicial (2026-09-23)
 
 | Item | Status | Evidência |
 |---|---|---|
@@ -744,7 +748,99 @@ Confirmado depois de tudo: o clique em "Iniciar" vem do `garantirJogo`, **não**
 | Cruzadas | 76 fantasmas | não — segue com 0 casas preenchidas |
 | Soletra | painel com 23 palavras | não |
 
-## 15. Histórico
+## 15. Builds sincronizados e prontidão para lojas (2026-09-24)
+
+### Fonte única
+
+`extension/` é a única fonte editável. Existem duas saídas, geradas — não
+mantidas manualmente em paralelo:
+
+| Saída | Comando | Conteúdo |
+|---|---|---|
+| Completa | `Load unpacked` apontando para `extension/` | Sudoku.com, `chrome.debugger`, arrasto CDP do Labirinto e todos os jogos |
+| Loja | `npm run build:store` | somente G1, sem `debugger`, sem service worker e sem `<all_urls>` |
+| Userscript | `npm run build:userscript` | Violentmonkey/Tampermonkey, somente G1, sem APIs Chrome |
+
+O gerador `tools/build_store.py` usa os blocos explícitos
+`/* @loja:remove:start */`/`/* @loja:remove:end */`, reconstrói o manifest e
+produz:
+
+```text
+dist/store/
+dist/g1-games-helper-store.zip
+```
+
+`dist/` é descartado pelo Git. O build falha se o pacote gerado contiver
+`debugger`, `chrome.debugger`, `<all_urls>`, Sudoku.com, `background.js` ou um
+marcador não removido. Assim, editar um módulo atualiza os dois builds na
+próxima geração; a divergência fica limitada ao que foi conscientemente marcado.
+
+Comandos de manutenção:
+
+```bash
+npm run check:store       # valida sem escrever
+npm run build:store       # gera diretório e ZIP
+npm run build:userscript  # gera userscript único
+```
+
+### O que ainda falta para publicar
+
+O pacote técnico de loja foi gerado e verificado, mas **a publicação ainda não é
+garantida**. Antes do upload, faltam:
+
+1. decidir o nome sem a marca G1 — o build já usa `Logic Games Helper`;
+2. preparar 1–5 screenshots nos tamanhos aceitos, tile promocional e ícone
+   comercial;
+3. preencher a ficha: descrição, categoria, idioma, suporte, política de
+   privacidade, práticas de dados e *single purpose*;
+4. submeter primeiro no Edge Add-ons e observar a revisão;
+5. só depois decidir se vale submeter à Chrome Web Store.
+
+Riscos que continuam mesmo no build sem `debugger`: a política de permissões
+mínimas, eventual reclamação de marca se algum texto ainda citar G1 e o risco
+de política sobre automatizar/interferir em jogos de terceiros. Remover uma
+permissão **não** transforma automaticamente a automação em conteúdo aceitável.
+A variante de loja perde Sudoku.com e o arrasto automático do Labirinto; os seis
+jogos G1 restantes mantêm os modos assistido e automático.
+
+### Modo humano: o que ele realmente significa
+
+O modo `Humano` é uma **cadência humanizada**, não uma promessa de que a
+extensão é indistinguível de uma pessoa nem um mecanismo de evasão de detecção.
+Ele está implementado nos caminhos automáticos assim:
+
+- conteúdo DOM: pausas aleatórias entre letras/células, pausas maiores em blocos
+e ordem de preenchimento semelhante à de uma pessoa;
+- Soletra/Dito: entrada letra a letra e pausa antes da confirmação;
+- Cruzadas: ordem palavra por palavra, pausa entre palavras;
+- Caça-Palavras: um destaque por vez com intervalo visível;
+- Labirinto CDP completo: mouse interpolado, pontos intermediários e delays;
+- Sudoku.com CDP: movimento interpolado, cliques e pausas entre célula e numpad;
+- modos `Normal` e `Rápido` reduzem as pausas; `Rápido` pode usar atraso mínimo.
+
+No modo **Só mostrar**, não existe automação do jogo: o assistente pinta a
+solução e o jogador faz os gestos. Portanto, nesse modo, o comportamento é
+humanizado por definição — é o usuário quem joga.
+
+Os testes verificaram a propriedade de segurança do modo assistido (a solução
+fica visível, mas o estado do jogo não muda) nos sete jogos. Isso não testa nem
+promete aprovação de loja, nem contorna mecanismos antifraude/antibot. Para a
+ficha da loja, descreva honestamente como "ritmo configurável" ou "pausas entre
+ações", nunca como "indetectável".
+
+### Evidências de manutenção
+
+Últimos gates validados neste ciclo:
+
+```text
+build/check da loja: OK
+13 arquivos JS da loja: node --check OK
+popup completo: POPUP OK (10 chips)
+popup loja: POPUP OK (9 chips; Sudoku.com removido)
+package sem: debugger, Sudoku.com, <all_urls>, background.js, marcadores
+```
+
+## 16. Histórico
 
 | Data | Mudança |
 |---|---|
@@ -779,7 +875,7 @@ Confirmado depois de tudo: o clique em "Iniciar" vem do `garantirJogo`, **não**
 
 ---
 
-## 16. Comandos úteis
+## 17. Comandos úteis
 
 ```bash
 # Edge com CDP (para inspecionar/testar; a extensão carrega manualmente)

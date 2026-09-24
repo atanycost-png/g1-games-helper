@@ -1,6 +1,6 @@
 {
   "name": "g1-games-helper",
-  "version": "4.0.0",
+  "version": "4.1.0",
   "private": true,
   "description": "Extensão (MV3) que resolve os jogos do G1 e o Sudoku.com com ritmo humanizado",
   "license": "MIT",

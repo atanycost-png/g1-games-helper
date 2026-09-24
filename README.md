@@ -135,6 +135,35 @@ O ritmo (só faz diferença no modo **Resolver**) é aplicado em todos os jogos:
 - **Caça-Palavras** — revela uma palavra por vez;
 - **Sudoku / Cruzadas** — pausa de 220–540 ms por célula e pausa maior a cada ~12.
 
+### O que "modo humano" significa
+
+O modo **Humano** usa cadência configurável: pausas aleatórias, entrada letra a
+letra, ordem gradual, pausas maiores em blocos e movimento interpolado nos
+caminhos que usam CDP. **Não** significa "indetectável" nem é promessa de evasão
+antibot; é apenas ritmo/UX. No modo **Só mostrar**, o usuário faz os gestos e a
+extensão não submete nada.
+
+### Builds sincronizados
+
+`extension/` é a fonte única. Para gerar a variante publicável sem API
+privilegiada:
+
+```bash
+npm run check:store
+npm run build:store
+```
+
+O resultado é `dist/g1-games-helper-store.zip`. O build remove Sudoku.com,
+`chrome.debugger`, o service worker e `<all_urls>`, mas mantém os seis jogos do
+G1. Ele falha se esses itens ou marcadores de transformação aparecerem no
+artefato. Não edite `dist/` manualmente.
+
+O que ainda falta antes da postagem: screenshots/tile/ícone finais, preencher a
+ficha da loja (privacidade, práticas de dados e *single purpose*), escolher um
+nome sem a marca G1 e passar pela revisão. Remover `debugger` reduz a superfície
+técnica, mas não elimina o risco de política da automação de jogos de terceiros.
+Detalhes e checklist estão em [`docs/LOJA.md`](docs/LOJA.md).
+
 ## Quando é preciso `chrome.debugger`
 
 Dois jogos são `<canvas>` e **ignoram eventos sintéticos** (testado com
@@ -158,7 +187,7 @@ tour/drawer de boas-vindas do G1 (`.tour-spotlight`, `.drawer-overlay`).
 
 ```
 extension/
-├── manifest.json       # MV3; permissões: activeTab, scripting, debugger, tabs
+├── manifest.json       # MV3; build completo usa debugger; build de loja não
 ├── g1common.js         # base compartilhada: gates, ritmo, painel, teclado
 ├── content.js          # detecção (10 estratégias) + ações
 ├── dito.js             # Wordle: base diária

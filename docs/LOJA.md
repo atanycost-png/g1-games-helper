@@ -20,6 +20,38 @@ de interferência em serviços de terceiros.
 | 4 | **Interferência / automação de jogo** | Política *Malicious and Prohibited Products*: "We don't allow content that harms or **interferes with the operation** of the networks, servers, or other infrastructure of Google or **any third-parties**". Vale mesmo sem `debugger` — o modo automático continua automatizando o jogo. Risco de política, não de código. |
 | 5 | **Assets e ficha da loja** | Não existem: faltam 1–5 screenshots (1280×800 ou 640×400), tile 440×280, ícone que venda, o formulário de práticas de dados e o campo *single purpose* preenchido com detalhe ("Include detailed information in the single purpose field regarding your extension's primary functionality"). |
 
+## Modo humano: conformidade e limites
+
+**Sim, o modo humano está implementado nos caminhos automáticos**, no sentido
+correto de cadência de interação: o modo Humano usa pausas aleatórias, entrada
+letra a letra, ordem gradual, pausas maiores em blocos e — no CDP — movimento do
+mouse interpolado. Normal acelera essa cadência; Rápido reduz para atraso mínimo.
+
+Isso é **UX/ritmo humanizado**, não é garantia de comportamento indistinguível de
+uma pessoa, não é mecanismo de evasão de detecção e não muda a avaliação de
+política da loja. Para a ficha, a descrição correta é "ritmo configurável" ou
+"pausas entre ações"; nunca "indetectável".
+
+No modo **Só mostrar**, a extensão não preenche nem submete nada: pinta a solução
+e o próprio usuário realiza os gestos. Os sete jogos foram verificados com
+`tools/test_assistido_cdp.py`: solução visível e estado do jogo inalterado.
+
+O comportamento está coberto por código real:
+
+| Caminho | Evidência do modo Humano |
+|---|---|
+| Sudoku G1 | atraso variável entre células + pausa maior em blocos |
+| Dito/Soletra | letra a letra + pausa antes da confirmação |
+| Combinado/Cruzadas | ordem gradual + pausas entre grupos/palavras |
+| Caça-Palavras | um destaque por vez, com intervalo |
+| Labirinto CDP | mouse interpolado e pontos intermediários |
+| Sudoku.com CDP | mouse interpolado, cliques e pausas entre célula/numpad |
+| Só mostrar | usuário faz a interação; não há automação |
+
+O modo Humano **não elimina** o risco de política sobre automação de jogos de
+terceiros. Remover `debugger` diminui a superfície técnica e visual, mas não
+transforma o modo automático em automaticamente aceitável para a CWS/Edge.
+
 ## O que o modo assistido mudou (v4.1.0)
 
 O modo assistido (`extension/revelar.js`) é **100% DOM** — verificado: **zero**
@@ -120,6 +152,19 @@ Continua valendo a marca no nome (renomear é mais seguro). **Como publicar** (3
 passos, precisa da conta): criar conta em <https://greasyfork.org>, *Add script*
 colando `userscript/g1-games-helper.user.js` (ou apontando a URL raw do GitHub),
 publicar.
+
+## Checklist operacional antes do upload
+
+- [x] `npm run check:store`
+- [x] `npm run build:store`
+- [x] `node --check` nos JavaScript da variante
+- [x] invariantes: sem `debugger`, Sudoku.com, `<all_urls>`, background e marcadores
+- [x] smoke test do popup completo e do popup da loja
+- [ ] screenshots da loja
+- [ ] tile promocional e ícone final
+- [ ] ficha de práticas de dados e *single purpose*
+- [ ] submissão/revisão no Edge Add-ons
+- [ ] eventual submissão/revisão na Chrome Web Store
 
 ## Recomendação
 
