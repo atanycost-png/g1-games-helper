@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <title>G1 Games Helper</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="popup">
+    <header class="top">
+      <div class="logo">🧩</div>
+      <div class="who">
+        <h1>G1 Games Helper</h1>
+        <p id="sub">detectando o jogo…</p>
+      </div>
+    </header>
+
+    <!-- Jogo da aba atual -->
+    <section id="card" class="card">
+      <div class="card-head">
+        <span id="ponto" class="ponto"></span>
+        <b id="jogo">—</b>
+        <span id="badge" class="badge">—</span>
+      </div>
+      <div id="info" class="info"></div>
+      <button id="acao" class="btn btn-primario" disabled>—</button>
+      <div class="linha">
+        <button id="detectar" class="btn btn-fantasma">Reler a página</button>
+        <button id="limpar" class="btn btn-fantasma">Fechar painel</button>
+      </div>
+    </section>
+
+    <!-- Ritmo -->
+    <section class="bloco">
+      <div class="bloco-titulo">
+        <span>Ritmo</span>
+        <small id="ritmo-nota">humano</small>
+      </div>
+      <div class="seg" id="ritmos">
+        <button data-modo="humano" class="on">Humano</button>
+        <button data-modo="normal">Normal</button>
+        <button data-modo="rapido">Rápido</button>
+      </div>
+      <label class="check">
+        <input type="checkbox" id="fechar-popup" checked>
+        Fechar o popup ao agir (a página recupera o foco e o jogo não pausa)
+      </label>
+    </section>
+
+    <!-- Menu de jogos -->
+    <section class="bloco">
+      <div class="bloco-titulo">
+        <span>Jogos suportados</span>
+        <small id="menu-nota">clique para abrir</small>
+      </div>
+      <div id="chips" class="chips"></div>
+    </section>
+
+    <div id="log" class="log"></div>
+  </div>
+  <script src="popup.js"></script>
+</body>
+</html>

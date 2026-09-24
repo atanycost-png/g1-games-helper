@@ -1,0 +1,15 @@
+{
+  "name": "g1-games-helper",
+  "version": "4.0.0",
+  "private": true,
+  "description": "Extensão (MV3) que resolve os jogos do G1 e o Sudoku.com com ritmo humanizado",
+  "license": "MIT",
+  "author": "atanycost-png",
+  "homepage": "https://github.com/atanycost-png/g1-games-helper",
+  "scripts": {
+    "test": "node test/solver.test.js",
+    "test:integration": "python test/integration_test.py",
+    "test:all": "npm run test && npm run test:integration",
+    "test:jogos": "python tools/test_jogos_cdp.py"
+  }
+}

@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<title>Fixture — G1 Sudoku (teste de integração)</title>
+<style>
+  body { font-family: sans-serif; margin: 20px; }
+  .cells { display: grid; grid-template-columns: repeat(9, 44px); border: 2px solid #333; width: max-content; }
+  .cell { width: 44px; height: 44px; border: 1px solid #bbb; box-sizing: border-box; }
+  .cell-btn { width: 100%; height: 100%; border: 0; background: #fff; font-size: 18px; cursor: pointer; }
+  .cell-btn.sel { background: #cfe8ff; }
+  .keyboard { margin-top: 12px; display: flex; gap: 6px; }
+  .btn-key { width: 40px; height: 40px; font-size: 16px; cursor: pointer; }
+  .done { color: #0a0; font-weight: bold; }
+</style>
+</head>
+<body>
+<h3>Fixture G1 Sudoku</h3>
+<p id="hint">Clique numa célula e depois num número (simula o G1).</p>
+<div class="cells-container"><div class="cells" id="cells"></div></div>
+<div class="keyboard" id="keyboard"></div>
+
+<script>
+// Puzzle real (mission do sudoku.com) — 43 vazias
+const MISSION = "004300001007091240190040800709200506002050030000076912405080000270000158000625370";
+// Valor esperado ao final (gabarito)
+const SOLUTION = "524368791867591243193742865749213586612859437358476912435187629276934158981625374";
+window.__expected = SOLUTION;
+
+let selected = null;
+
+const cells = document.getElementById('cells');
+for (let r = 1; r <= 9; r++) {
+  for (let c = 1; c <= 9; c++) {
+    const i = (r - 1) * 9 + (c - 1);
+    const cell = document.createElement('div');
+    cell.className = 'cell';
+    // mesma convenção do G1: style inline com grid-row-start / grid-column-start
+    cell.style.gridRowStart = r;
+    cell.style.gridColumnStart = c;
+
+    const inner = document.createElement('div');
+    inner.className = 'cell-inner';
+    const btn = document.createElement('button');
+    btn.className = 'cell-btn';
+    const span = document.createElement('span');
+    const v = MISSION[i];
+    // no G1 a célula dada NÃO tem a classe user-number; a vazia (ou digitada) tem
+    span.className = v !== '0' ? 'cell-text' : 'cell-text cell-text-user-number';
+    span.textContent = v !== '0' ? v : '';
+    btn.appendChild(span);
+    inner.appendChild(btn);
+    cell.appendChild(inner);
+    cells.appendChild(cell);
+
+    btn.addEventListener('click', () => {
+      if (selected && selected.parentElement) selected.parentElement.classList.remove('sel');
+      selected = span;
+      btn.classList.add('sel');
+    });
+  }
+}
+
+// Teclado numérico: escreve na célula selecionada (como o G1)
+const kb = document.getElementById('keyboard');
+for (let n = 1; n <= 9; n++) {
+  const b = document.createElement('button');
+  b.className = 'btn-key';
+  b.textContent = String(n);
+  b.addEventListener('click', () => {
+    if (!selected) return;
+    selected.textContent = String(n);
+    selected.className = 'cell-text cell-text-user-number';
+  });
+  kb.appendChild(b);
+}
+
+// Helper de verificação do teste
+window.__checkFixture = function () {
+  const out = [];
+  for (const cell of document.querySelectorAll('DIV.cell')) {
+    const r = parseInt(cell.style.gridRowStart, 10);
+    const c = parseInt(cell.style.gridColumnStart, 10);
+    const t = (cell.querySelector('.cell-text') || {}).textContent || '';
+    out[(r - 1) * 9 + (c - 1)] = t.trim() || '0';
+  }
+  const flat = out.join('');
+  const zeros = flat.split('').filter(x => x === '0').length;
+  return { flat, zeros, completo: zeros === 0, correto: flat === SOLUTION };
+};
+</script>
+</body>
+</html>

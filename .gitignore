@@ -1,0 +1,17 @@
+# dependências
+node_modules/
+package-lock.json
+
+# sistema
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# temporários / saídas de teste
+*.log
+*.tmp
+/tmp/
+/out/
+__pycache__/
+*.py[cod]
+.venv/

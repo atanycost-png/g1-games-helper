@@ -1,0 +1,29 @@
+{
+  "manifest_version": 3,
+  "name": "G1 Games Helper",
+  "version": "4.0.0",
+  "description": "Resolve os jogos do G1: Sudoku, Dito, Soletra, Combinado, Labirinto, Caça-Palavras e Palavras Cruzadas (menos o sudoku.com), com ritmo humanizado e painel de acompanhamento.",
+  "permissions": ["activeTab", "scripting", "debugger", "tabs"],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "action": {
+    "default_popup": "popup.html",
+    "default_icon": {
+      "16": "icons/icon16.png",
+      "48": "icons/icon48.png",
+      "128": "icons/icon128.png"
+    }
+  },
+  "icons": {
+    "16": "icons/icon16.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  },
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["solver.js", "crossword.js", "wordsearch.js", "g1common.js", "dito.js", "soletra.js", "combinado.js", "labirinto.js", "content.js"]
+    }
+  ]
+}
