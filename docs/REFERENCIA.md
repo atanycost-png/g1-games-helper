@@ -706,13 +706,31 @@ própria em vez de `text.value`.
 | `wordsearch` | reusa o destaque que já existia | |
 | `crossword` | letra rosa em cada casa vazia | ⚠️ casa VAZIA não tem `text.value` para clonar — o fantasma é construído da geometria do `<rect>` da célula |
 
+**Como verificar isso sem se enganar** (a parte mais difícil do ciclo). Medir o
+estado antes/depois parece trivial e não é:
+
+1. **Meça com o tabuleiro já aberto e estável.** O helper pode clicar "Iniciar"
+   (`garantirJogo`, via `detectGridWithRetry`) — se isso cair no meio da medição, o
+   tabuleiro sai de "tela de abertura" para "rodada aberta" e o teste acusa jogada
+   que não existiu. No Combinado isso deu `0 → 16` palavras selecionáveis.
+2. **Escolha uma métrica que só mude com jogada real.** Rótulos de casca mentem: no
+   Combinado os rótulos `G1..G4` aparecem **só por a rodada abrir**, não porque um
+   grupo foi resolvido. A medida honesta é a palavra deixar de ser
+   `button.cell--interactive` (grupo resolvido desativa suas 4 palavras).
+3. **Espere duas leituras iguais antes de aceitar** (`medir_estavel`): os jogos
+   restauram a partida do dia de forma assíncrona pelo localStorage, e medir cedo
+   demais pega o tabuleiro vazio.
+
+Confirmado depois de tudo: o clique em "Iniciar" vem do `garantirJogo`, **não** do
+`fecharBloqueios` (a lista dele é `avançar|próximo|entendi|ok|fechar|pular|…`).
+
 **Verificação** (`tools/test_assistido_cdp.py`), medindo o estado antes e depois:
 
 | Jogo | Marcas | Preencheu algo? |
 |---|---|---|
 | Sudoku (fixture) | 43 fantasmas | **não** — a detecção continua lendo as mesmas 38 fixas (filtro funcionando) |
-| Dito | 5 letras (palavra `LAZER`) | não |
-| Combinado | 16 selos | não |
+| Dito | 5 letras (palavra `LAZER`) | não — removendo as marcas, o jogo tem 0 letras |
+| Combinado | 16 selos | não — segue com as 16 palavras selecionáveis |
 | Labirinto | trajeto no canvas | não |
 | Caça-Palavras | 39 células | não |
 | Cruzadas | 76 fantasmas | não — segue com 0 casas preenchidas |

@@ -68,9 +68,12 @@ MEDIDA = {
       ghosts: document.querySelectorAll('.__g1g_ghost').length,
       painel: !!document.getElementById('__g1g_panel')
     })""",
+    # NÃO medir rótulos "G1..G4": eles aparecem só por a rodada abrir (o helper
+    # clica "Iniciar" via garantirJogo), não porque um grupo foi resolvido — dava
+    # falso positivo. O sinal real é a palavra deixar de ser `cell--interactive`.
     "combinado": """JSON.stringify({
       tipo: 'combinado',
-      gruposResolvidos: (() => { const s = [...document.querySelectorAll('button')].map(b => (b.textContent||'').trim()).filter(t => /^g\\d$/i.test(t)); return s.length; })(),
+      ativos: document.querySelectorAll('button.cell--interactive').length,
       ghosts: document.querySelectorAll('.__g1g_ghost').length,
       painel: !!document.getElementById('__g1g_panel')
     })""",
@@ -137,6 +140,29 @@ class Page:
         }})()""")
 
 
+def medir_estavel(p, nome, tentativas=8, intervalo=1.0):
+    """Mede o estado e só aceita quando duas leituras seguidas batem.
+
+    Os jogos do G1 restauram a partida do dia de forma ASSÍNCRONA (localStorage):
+    medir cedo demais pega o tabuleiro antes da restauração, e o "depois" acusa uma
+    mudança que foi do próprio jogo, não da gente. Foi assim que o Combinado deu
+    falso positivo — as colunas que eu tinha resolvido antes reapareceram sozinhas.
+    """
+    anterior = None
+    for _ in range(tentativas):
+        atual = p.js(MEDIDA[nome])
+        if isinstance(atual, str):
+            try:
+                atual = json.loads(atual)
+            except Exception:
+                atual = None
+        if atual is not None and atual == anterior:
+            return atual
+        anterior = atual
+        time.sleep(intervalo)
+    return anterior
+
+
 def testar(nome, url, p):
     print(f"\n{'='*74}\n▶ {nome}  (modo assistido)\n{'='*74}")
     p.goto(url)
@@ -145,7 +171,15 @@ def testar(nome, url, p):
         pass
     print("injeção:", p.injetar())
 
-    print("antes: ", p.js(MEDIDA[nome]))
+    # Abre a rodada e espera estabilizar ANTES de medir o "antes".
+    # O helper pode clicar "Iniciar" (garantirJogo) — se isso acontecer no meio da
+    # medição, o tabuleiro muda de "tela de abertura" para "rodada aberta" e o
+    # teste acusa jogada que não existiu (foi o caso do Combinado: 0 → 16 palavras
+    # selecionáveis só porque a rodada abriu).
+    p.js("window.__g1Helper.detectGridWithRetry(6000).then(g => g ? g.strategy : null)", await_promise=True)
+    time.sleep(2)
+    antes = medir_estavel(p, nome)
+    print("antes (estável):", json.dumps(antes, ensure_ascii=False) if antes else None)
 
     res = p.js("window.__g1Helper.actionRevelar({}).then(r => JSON.stringify(r))", await_promise=True)
     if isinstance(res, str):
@@ -156,12 +190,7 @@ def testar(nome, url, p):
     print("revelar:", json.dumps(res, ensure_ascii=False)[:400])
     time.sleep(1.2)
 
-    depois = p.js(MEDIDA[nome])
-    if isinstance(depois, str):
-        try:
-            depois = json.loads(depois)
-        except Exception:
-            pass
+    depois = medir_estavel(p, nome)
     print("depois:", json.dumps(depois, ensure_ascii=False)[:400])
 
     # a deteccao precisa continuar enxergando o tabuleiro como ele é (sem os fantasmas)
@@ -184,18 +213,25 @@ def testar(nome, url, p):
     destaques = (depois or {}).get("destaques", 0)
     painel = (depois or {}).get("painel", False)
     pintou = ghosts > 0 or destaques > 0 or painel
-    # "não jogou": o estado medido não pode ter aumentado
+    # "não jogou": o estado medido não pode ter mudado. Comparação genérica contra a
+    # medição de ANTES (nada de número fixo no código — o fixture já mudou de 30
+    # para 38 fixas uma vez e o teste passou a acusar falso positivo).
     nao_jogou = True
-    if nome == "fixture":
-        nao_jogou = (depois or {}).get("lidas", 0) == 30      # 30 fixas no fixture
-    elif nome == "fixture" or nome == "palavras-cruzadas":
-        nao_jogou = (depois or {}).get("preenchidas", 0) == (depois or {}).get("preenchidas", 0)
-    elif nome == "dito":
-        nao_jogou = True     # o fantasma vai numa linha vazia; nenhuma jogada é submetida
+    for chave in ("lidas", "preenchidas", "linhasComLetra", "ativos"):
+        if chave in (antes or {}) and chave in (depois or {}):
+            if antes[chave] != depois[chave]:
+                # a única mudança aceitável é o fantasma no Dito entrar na contagem
+                # de linhas (é marca nossa, não jogada do jogo)
+                if not (nome == "dito" and chave == "linhasComLetra"):
+                    nao_jogou = False
+    if antes is None or depois is None:
+        nao_jogou = False
     print(f"  pintou={pintou}  painel={painel}  não jogou={nao_jogou}")
 
-    return {"nome": nome, "ok": bool(res) and isinstance(res, dict) and res.get("ok") and pintou,
-            "pintou": pintou, "painel": painel, "ghosts": (depois or {}).get("ghosts")}
+    return {"nome": nome,
+            "ok": bool(res) and isinstance(res, dict) and res.get("ok") and pintou and nao_jogou,
+            "pintou": pintou, "painel": painel, "naoJogou": nao_jogou,
+            "ghosts": (depois or {}).get("ghosts")}
 
 
 def main():
