@@ -45,11 +45,12 @@ Build reproduzível a partir do repositório:
 1. git clone https://github.com/atanycost-png/g1-games-helper
 2. cd g1-games-helper
 3. python -m venv .venv
-4. .venv/Scripts/python.exe -m pip install Pillow
-5. .venv/Scripts/python.exe tools/build_amo_assets.py
-6. .venv/Scripts/python.exe tools/build_firefox.py
+5. .venv/Scripts/python.exe -m pip install "Pillow>=10,<13"
+6. .venv/Scripts/python.exe tools/build_amo.py
 
-O pacote gerado fica em dist/logic-games-helper-firefox.zip. O Manifest inclui data_collection_permissions com required: [none]. O lint oficial web-ext foi executado com 0 erros, 0 notices e 0 warnings.
+O pacote gerado fica em dist/logic-games-helper-firefox.zip. O arquivo
+SOURCE_README.md na raiz do código-fonte contém os mesmos requisitos e passos
+reproduzíveis, e tools/build_amo.py executa o pipeline completo. O Manifest inclui data_collection_permissions com required: [none]. O lint oficial web-ext foi executado com 0 erros, 0 notices e 0 warnings.
 
 A extensão é um projeto independente e não é afiliada, patrocinada ou endossada pelo G1 ou pela Globo.
 ```
