@@ -55,11 +55,19 @@ document.addEventListener('DOMContentLoaded', () => {
   const log = (t) => { logEl.textContent = t || ''; };
 
   // ── persistência do ritmo ──────────────────────────────────────────────────
-  chrome.storage.local.get(['modo', 'fechar'], (r) => {
-    if (r && r.modo && MODOS[r.modo]) modo = r.modo;
-    if (r && typeof r.fechar === 'boolean') fecharEl.checked = r.fechar;
+  // ⚠️ `chrome.storage` exige a permissão "storage" no manifest. Se ela faltar,
+  // o objeto nem existe e um acesso direto derruba TODO o DOMContentLoaded
+  // (o popup abria sem botões). Aqui a falha é tolerada.
+  const store = (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local) || null;
+  if (store) {
+    store.get(['modo', 'fechar'], (r) => {
+      if (r && r.modo && MODOS[r.modo]) modo = r.modo;
+      if (r && typeof r.fechar === 'boolean') fecharEl.checked = r.fechar;
+      pintarRitmo();
+    });
+  } else {
     pintarRitmo();
-  });
+  }
 
   function pintarRitmo() {
     [...$('ritmos').children].forEach(b => b.classList.toggle('on', b.dataset.modo === modo));
@@ -72,9 +80,9 @@ document.addEventListener('DOMContentLoaded', () => {
     if (!b) return;
     modo = b.dataset.modo;
     pintarRitmo();
-    chrome.storage.local.set({ modo });
+    if (store) store.set({ modo });
   });
-  fecharEl.addEventListener('change', () => chrome.storage.local.set({ fechar: fecharEl.checked }));
+  fecharEl.addEventListener('change', () => { if (store) store.set({ fechar: fecharEl.checked }); });
 
   // ── chips (menu de jogos) ──────────────────────────────────────────────────
   function pintarChips() {
